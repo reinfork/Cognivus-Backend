@@ -1,11 +1,12 @@
 const supabase = require('../config/supabase');
-const { courses_fields } = require('../helper/fields.js');
+const { course: select } = require('../helper/fields.js');
+const { course: payload } = require('../helper/payload.js');
 
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('tbmaterials')
-      .select(courses_fields);
+      .from('tbcourse')
+      .select(select);
 
     if (error) throw error;
 
@@ -28,9 +29,9 @@ exports.getById = async (req, res) => {
     const { id } = req.params;
 
     let lecturerQuery = supabase
-      .from('tbmaterials')
-      .select(courses_fields)
-      .eq('materialid', id)
+      .from('tbcourse')
+      .select(select)
+      .eq('courseid', id)
       .single();
 
     let { data, error } = await lecturerQuery;
@@ -55,7 +56,7 @@ exports.create = async (req, res) => {
   try {
     // retrieve data
     const { title } = req.body; 
-    const { material_code, file, video_link, level_id } = req.body;
+    const { course_code, file, video_link, classid } = req.body;
 
     if (!title) {
       return res.status(400).json({ success: false, message: 'Title are required for a new course' });
@@ -63,11 +64,11 @@ exports.create = async (req, res) => {
 
     // Insert into table
     const { data, error } = await supabase
-      .from('tbmaterials')
+      .from('tbcourse')
       .insert({
-        title, material_code, file, video_link, level_id
+        title, course_code, file, video_link, classid
       })
-      .select('materialid')
+      .select('courseid')
       .single();
 
     if (error) {
@@ -93,16 +94,16 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, material_code, file, video_link, level_id } = req.body;
+    const { title, course_code, file, video_link, classid } = req.body;
 
     // update course
     let updateQuery = supabase
-      .from('tbmaterials')
+      .from('tbcourse')
       .update({
-        title, material_code, file, video_link, level_id
+        title, course_code, file, video_link, classid
       })
-      .eq('materialid', id)
-      .select(courses_fields);
+      .eq('courseid', id)
+      .select(select);
 
     let { data, error } = await updateQuery;
 
@@ -127,10 +128,10 @@ exports.delete = async (req, res) => {
     const { id } = req.params;
 
     const { error } = await supabase
-      .from('tbmaterials')
+      .from('tbcourse')
       .delete()
-      .eq('materialid', id)
-      .select(courses_fields);
+      .eq('courseid', id)
+      .select(select);
 
     if (error) throw error;
 

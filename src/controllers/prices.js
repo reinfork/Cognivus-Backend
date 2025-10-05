@@ -2,7 +2,7 @@ const supabase = require('../config/supabase');
 const { prices: payload } = require('../helper/payload');
 const { prices: select } = require('../helper/fields');
 
-//read all user data
+//read all price data
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -18,13 +18,13 @@ exports.getAll = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: 'Error fetching price',
       error: error.message
     });
   }
 };
 
-//read user by id
+//read price by id
 exports.getById = async (req, res) => {
   const { id } = req.params;
 
@@ -44,13 +44,13 @@ exports.getById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: 'Error fetching price',
       error: error.message
     });
   }
 };
 
-//insert new user
+//insert new price
 exports.create = async (req, res) => {
   try {
     const insert = payload(req.body)
@@ -69,13 +69,13 @@ exports.create = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating user',
+      message: 'Error creating price',
       error: error.message
     });
   }
 };
 
-// update user data
+// update price data
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
@@ -96,13 +96,13 @@ exports.update = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating user',
+      message: 'Error updating price',
       error: error.message
     });
   }
 };
 
-// delete user instance
+// delete price instance
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -116,7 +116,7 @@ exports.delete = async (req, res) => {
     
     res.json({
       success: true,
-      message: 'user deleted successfully'
+      message: 'price deleted successfully'
     });
   } catch (error) {
     res.status(500).json({
