@@ -53,7 +53,7 @@ exports.create = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // --- Langkah 1: Buat entri di tabel 'users' ---
+    // --- Langkah 1: Buat entri di tabel 'tbuser' ---
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: 'Username, email, and password are required for the user account.' });
     }
@@ -61,7 +61,7 @@ exports.create = async (req, res) => {
     const encrypted_password = hashPassword(password)
 
     const { data: newUser, error: userError } = await supabase
-      .from('users')
+      .from('tbuser')
       .insert({
         username,
         email,

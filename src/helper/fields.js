@@ -1,6 +1,6 @@
 exports.course = `
-	materialid,
-	material_code,
+	courseid,
+	course_code,
 	title,
 	upload_date,
 	file,
@@ -13,7 +13,7 @@ exports.class = `
 	class_code,
 	description,
 	levelid,
-	teacherid
+	lecturerid
 `;
 
 exports.student = `
@@ -75,7 +75,7 @@ exports.level = `
 exports.teacher_level = `
 	tlid,
 	levelid,
-	teacherid
+	lecturerid
 `;
 
 exports.program = `

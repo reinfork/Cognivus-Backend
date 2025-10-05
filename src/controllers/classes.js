@@ -7,7 +7,7 @@ exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tbclass')
-      .select(classes_fields);
+      .select(select);
 
     if (error) throw error;
 
@@ -32,7 +32,7 @@ exports.getById = async (req, res) => {
 
     let lecturerQuery = supabase
       .from('tbclass')
-      .select(classes_fields)
+      .select(select)
       .eq('classid', id)
       .single();
 
@@ -58,9 +58,9 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     // retrieve data
-    const { class_code, description, level_id, teacherid } = req.body;
+    const { class_code, description, levelid, teacherid } = req.body;
 
-    if (!class_code || !level_id) {
+    if (!class_code || !levelid) {
       return res.status(400).json({ success: false, message: 'Class Code and Level are required for a new class' });
     }
 
@@ -68,7 +68,7 @@ exports.create = async (req, res) => {
     const { data, error } = await supabase
       .from('tbclass')
       .insert({
-        class_code, description, level_id, teacherid
+        class_code, description, levelid, teacherid
       })
       .select('classid')
       .single();
@@ -96,16 +96,16 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { class_code, description, level_id, teacherid } = req.body;
+    const { class_code, description, levelid, teacherid } = req.body;
 
     // update class
     let updateQuery = supabase
       .from('tbclass')
       .update({
-        class_code, description, level_id, teacherid
+        class_code, description, levelid, teacherid
       })
       .eq('classid', id)
-      .select(classes_fields);
+      .select(select);
 
     let { data, error } = await updateQuery;
 
@@ -134,7 +134,6 @@ exports.delete = async (req, res) => {
       .from('tbclass')
       .delete()
       .eq('classid', id)
-      .select(classes_fields);
 
     if (error) throw error;
 
