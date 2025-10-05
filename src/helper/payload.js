@@ -21,7 +21,7 @@ exports.student = (body = {}) => {
   }, {});
 };
 
-exports.teacher = (body = {}) => {
+exports.lecturer = (body = {}) => {
   const allowedFields = [
     'fullname',
     'gender',
@@ -46,7 +46,7 @@ exports.user = (body = {}) => {
   const allowedFields = [
     'username',
     'email',
-    'role_id',
+    'roleid',
     'password',
     'is_active',
   ];
@@ -118,9 +118,12 @@ exports.price = (body = {}) => {
 
 exports.course = (body = {}) => {
   const allowedFields = [
-    'levelid',
-    'programid',
-    'harga'
+    'title',
+    'upload_date',
+    'file',
+    'video_link',
+    'classid',
+    'course_code'
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -134,8 +137,9 @@ exports.course = (body = {}) => {
 exports.class = (body = {}) => {
   const allowedFields = [
     'levelid',
-    'programid',
-    'harga'
+    'class_code',
+    'description',
+    'lecturerid'
   ];
 
   return allowedFields.reduce((payload, field) => {

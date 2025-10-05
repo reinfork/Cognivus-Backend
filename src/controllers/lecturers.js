@@ -6,7 +6,7 @@ const { hashPassword } = require('../utils/auth')
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .select(select);
 
     if (error) throw error;
@@ -29,7 +29,7 @@ exports.getById = async (req, res) => {
     const { id } = req.params;
 
     let { data, error } = await supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .select(select)
       .eq('userid', id)
       .single();  
@@ -53,7 +53,7 @@ exports.create = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // --- Langkah 1: Buat entri di tabel 'users' ---
+    // --- Langkah 1: Buat entri di tabel 'tbuser' ---
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: 'Username, email, and password are required for the user account.' });
     }
@@ -61,7 +61,7 @@ exports.create = async (req, res) => {
     const encrypted_password = hashPassword(password)
 
     const { data: newUser, error: userError } = await supabase
-      .from('users')
+      .from('tbuser')
       .insert({
         username,
         email,
@@ -78,7 +78,7 @@ exports.create = async (req, res) => {
     const insert = { ...payload(req.body), userid: newUser.userid };
 
     const { data: newLecturer, error: lecturerError } = await supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .insert(insert)
       .select()
       .single();
@@ -109,7 +109,7 @@ exports.update = async (req, res) => {
     const insert = payload(req.body);
 
     const { data, error } = supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .update(insert)
       .eq('userid', id)
       .select();
@@ -135,7 +135,7 @@ exports.delete = async (req, res) => {
     const { id } = req.params;
 
     const { data: lecturer, error: findError } = await supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .select('userid')
       .eq('userid', id)
       .single();
@@ -144,9 +144,9 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Lecturer not found.' });
     }
 
-    // --- Langkah 1: Hapus dari tabel 'tbteacher' ---
+    // --- Langkah 1: Hapus dari tabel 'tblecturer' ---
     const { error: lecturerError } = await supabase
-      .from('tbteacher')
+      .from('tblecturer')
       .delete()
       .eq('id', id);
 
