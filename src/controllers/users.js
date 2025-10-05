@@ -88,6 +88,13 @@ exports.update = async (req, res) => {
       .select();
     
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
     
     res.json({
       success: true,
@@ -107,12 +114,19 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tbuser')
       .delete()
       .eq('userid', id);
     
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+    }
     
     res.json({
       success: true,

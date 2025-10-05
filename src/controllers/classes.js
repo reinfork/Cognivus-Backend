@@ -58,7 +58,7 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     // retrieve data
-    const { class_code, description, levelid, teacherid } = req.body;
+    const { class_code, description, levelid, lecturerid } = req.body;
 
     if (!class_code || !levelid) {
       return res.status(400).json({ success: false, message: 'Class Code and Level are required for a new class' });
@@ -68,7 +68,7 @@ exports.create = async (req, res) => {
     const { data, error } = await supabase
       .from('tbclass')
       .insert({
-        class_code, description, levelid, teacherid
+        class_code, description, levelid, lecturerid
       })
       .select('classid')
       .single();
@@ -96,13 +96,13 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { class_code, description, levelid, teacherid } = req.body;
+    const { class_code, description, levelid, lecturerid } = req.body;
 
     // update class
     let updateQuery = supabase
       .from('tbclass')
       .update({
-        class_code, description, levelid, teacherid
+        class_code, description, levelid, lecturerid
       })
       .eq('classid', id)
       .select(select);
@@ -110,6 +110,13 @@ exports.update = async (req, res) => {
     let { data, error } = await updateQuery;
 
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Class not found.'
+      });
+    }
 
     return res.json({
       success: true,
@@ -130,12 +137,19 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tbclass')
       .delete()
       .eq('classid', id)
 
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Class not found.'
+      });
+    }
 
     return res.json({
       success: true,

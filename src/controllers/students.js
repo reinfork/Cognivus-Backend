@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const { student: select } = require('../helper/fields');
 const { student: payload } = require('../helper/payload');
+const { comparePassword, hashPassword, generateToken} = require('../utils/auth.js');
 
 //get all student data
 exports.getAll = async (req, res) => {
@@ -56,20 +57,20 @@ exports.create = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // --- Langkah 1: Buat entri di tabel 'users' ---
+    // --- Langkah 1: Buat entri di tabel 'tbuser' ---
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: 'Username, email, and password are required for the user account.' });
     }
 
-    const encrypted_password = hashPassword(password)
+    const encrypted_password = await hashPassword(password)
 
     const { data: newUser, error: userError } = await supabase
-      .from('users')
+      .from('tbuser')
       .insert({
         username,
         email,
-        encrypted_password,
-        role_id: 1
+        'password': encrypted_password,
+        roleid: 1,
       })
       .select('userid')
       .single();
@@ -79,6 +80,7 @@ exports.create = async (req, res) => {
     }
 
     const insert = { ...payload(req.body), userid: newUser.userid };
+    console.log(insert);
 
     const { data: newStudent, error: studentError } = await supabase
       .from('tbstudent')
