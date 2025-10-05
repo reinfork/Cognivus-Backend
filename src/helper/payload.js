@@ -21,7 +21,7 @@ exports.student = (body = {}) => {
   }, {});
 };
 
-exports.teacher = (body = {}) => {
+exports.lecturer = (body = {}) => {
   const allowedFields = [
     'fullname',
     'gender',

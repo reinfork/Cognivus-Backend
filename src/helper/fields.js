@@ -38,7 +38,7 @@ exports.student = `
 `;
 
 exports.lecturer = `
-	teacherid,
+	lecturerid,
 	fullname,
 	birthplace,
 	address,
