@@ -76,7 +76,7 @@ exports.level = (body = {}) => {
 exports.teacher_level = (body = {}) => {
   const allowedFields = [
     'levelid',
-    'teacherid'
+    'lecturerid'
   ];
 
   return allowedFields.reduce((payload, field) => {

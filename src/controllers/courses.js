@@ -109,6 +109,13 @@ exports.update = async (req, res) => {
 
     if (error) throw error;
 
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      });
+    }
+
     return res.json({
       success: true,
       data: data[0]
@@ -127,13 +134,20 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tbcourse')
       .delete()
       .eq('courseid', id)
       .select(select);
 
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course not found.'
+      });
+    }
 
     return res.json({
       success: true,

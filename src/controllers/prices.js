@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase');
-const { prices: payload } = require('../helper/payload');
-const { prices: select } = require('../helper/fields');
+const { price: payload } = require('../helper/payload');
+const { price: select } = require('../helper/fields');
 
 //read all price data
 exports.getAll = async (req, res) => {
@@ -88,6 +88,13 @@ exports.update = async (req, res) => {
       .select();
     
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pricelist not found.'
+      });
+    }
     
     res.json({
       success: true,
@@ -107,12 +114,19 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('tbprice')
       .delete()
       .eq('priceid', id);
     
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Pricelist not found.'
+      });
+    }
     
     res.json({
       success: true,

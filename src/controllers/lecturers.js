@@ -58,15 +58,15 @@ exports.create = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Username, email, and password are required for the user account.' });
     }
 
-    const encrypted_password = hashPassword(password)
+    const encrypted_password = await hashPassword(password)
 
     const { data: newUser, error: userError } = await supabase
       .from('tbuser')
       .insert({
         username,
         email,
-        encrypted_password,
-        role_id: 2
+        'password': encrypted_password,
+        roleid: 2
       })
       .select('userid')
       .single();
@@ -108,7 +108,7 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const insert = payload(req.body);
 
-    const { data, error } = supabase
+    const { data, error } = await supabase
       .from('tblecturer')
       .update(insert)
       .eq('userid', id)
@@ -134,23 +134,19 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { data: lecturer, error: findError } = await supabase
-      .from('tblecturer')
-      .select('userid')
-      .eq('userid', id)
-      .single();
-
-    if (findError || !lecturer) {
-      return res.status(404).json({ success: false, message: 'Lecturer not found.' });
-    }
-
-    // --- Langkah 1: Hapus dari tabel 'tblecturer' ---
-    const { error: lecturerError } = await supabase
+    const { data, error } = await supabase
       .from('tblecturer')
       .delete()
-      .eq('id', id);
+      .eq('userid', id);
 
-    if (lecturerError) throw lecturerError;
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lecturer not found.'
+      });
+    }
+
+    if (error) throw error;
 
     res.json({
       success: true,
