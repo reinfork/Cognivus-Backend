@@ -5,15 +5,22 @@ const { class: payload } = require('../helper/fields.js');
 // retrieve all data from class
 exports.getAll = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('tbclass')
-      .select(select);
+    const id = req.query.lecturerid;
+    let query = supabase
+        .from('tbclass')
+        .select(select);
+
+    if(id){
+        query = query.eq('lecturerid', id);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
     return res.json({
       success: true,
-      data: data
+      data
 
     });
   } catch (error) {

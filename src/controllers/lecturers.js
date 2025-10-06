@@ -116,6 +116,13 @@ exports.update = async (req, res) => {
 
     if (error) throw error;
 
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Lecturer not found.'
+      });
+    }
+
     res.json({
       success: true,
       data: data[0]
@@ -139,6 +146,8 @@ exports.delete = async (req, res) => {
       .delete()
       .eq('userid', id);
 
+    if (error) throw error;
+
     if (!data || data.length === 0) {
       return res.status(404).json({
         success: false,
@@ -146,7 +155,10 @@ exports.delete = async (req, res) => {
       });
     }
 
-    if (error) throw error;
+    const { data: userData, error: userError } = await supabase
+      .from('tbuser')
+      .delete()
+      .eq('userid', id);
 
     res.json({
       success: true,

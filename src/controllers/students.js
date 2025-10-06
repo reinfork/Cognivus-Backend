@@ -6,11 +6,16 @@ const { comparePassword, hashPassword, generateToken} = require('../utils/auth.j
 //get all student data
 exports.getAll = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('tbstudent')
-      .select(select)
-      .order('fullname', { ascending: true });
-    if (error) throw error;
+    const id = req.query.classid;
+    let query = supabase
+        .from('tbstudent')
+        .select(select);
+
+    if(id){
+        query = query.eq('classid', id);
+    }
+
+    const { data, error } = await query;
     
     res.json({
       success: true,

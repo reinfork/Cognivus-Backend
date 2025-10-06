@@ -1,5 +1,3 @@
-// Limit API request
-
 const rateLimit = require('express-rate-limit');
 
 // General rate limiter for all requests

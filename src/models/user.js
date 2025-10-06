@@ -14,11 +14,14 @@ exports.findOrCreate = async (profile) => {
     return existingUser;
   }
 
+  const username = profile.given_name.toLowerCase() + profile.family_name.toLowerCase();
+
   // Create new user
   const { data: newUser , error: userError } = await supabase
-    .from('users')
+    .from('tbuser')
     .insert([
       {
+        username,
         google_id: profile.id,
         email: profile.emails[0].value,
         roleid: 1

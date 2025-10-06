@@ -3,24 +3,18 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const supabase = require('./config/supabase');
+const restrictRegion = require('./middleware/region_limit.js');
+const { generalLimiter, authLimiter, lecturerLimiter, adminLimiter } = require('./middleware/rate_limit');
 require('dotenv').config();
 
 // Create express app
 const app = express();
 const PORT = process.env.PORT || 5000;
-let url = "";
-
-if (!process.env.NODE_ENV === 'development') {
-  url = "*";
-  console.log("Development mode: CORS unrestricted")
-} else url = process.env.FRONTEND_URL;
-
-console.log(url);
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: url,
+  origin: process.env.FRONTEND_URL,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -28,6 +22,7 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(restrictRegion);
 
 // Import routes
 const authRoutes = require('./routes/auth.js');
@@ -40,12 +35,11 @@ const levelsRoutes = require('./routes/levels');
 const teacher_levelRoutes = require('./routes/teacher_level');
 const programRoutes = require('./routes/programs');
 const priceRoutes = require('./routes/prices');
-const { generalLimiter, authLimiter, lecturerLimiter, adminLimiter } = require('./middleware/rate_limit');
 
 // Use routes
-app.use('/api/auth', authRoutes, generalLimiter);
+app.use('/api/auth', authRoutes, authLimiter);
 app.use('/api/students', studentRoutes, generalLimiter);
-app.use('/api/lecturers', lecturerRoutes, generalLimiter);
+app.use('/api/lecturers', lecturerRoutes, lecturerLimiter);
 app.use('/api/users', userRoutes, adminLimiter);
 app.use('/api/courses', courseRoutes, generalLimiter);
 app.use('/api/classes', classRoutes, adminLimiter);
