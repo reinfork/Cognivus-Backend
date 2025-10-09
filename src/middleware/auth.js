@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const { verifyToken } = require('../utils/auth.js');
 
 const authenticateToken = async (req, res, next) => {
   // Bypass authentication in development environment
@@ -25,9 +26,9 @@ const authenticateToken = async (req, res, next) => {
     }
     
     // Verify the token
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = verifyToken(token);
     
-    if (error) {
+    if (!payload) {
       return res.status(403).json({
         success: false,
         message: 'Invalid or expired token'

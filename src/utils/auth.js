@@ -15,7 +15,7 @@ const comparePassword = async (password, hash) => {
 
 // Generate JWT token
 const generateToken = (payload) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '3h' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
 };
 
 // Verify JWT token
@@ -27,25 +27,9 @@ const verifyToken = (token) => {
   }
 };
 
-// Generate Refresh JWT token
-const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '3h' });
-};
-
-// Verify Refresh JWT token
-const verifyRefreshToken = (token) => {
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    return null;
-  }
-};
-
 module.exports = {
   hashPassword,
   comparePassword,
   generateToken,
-  verifyToken,
-  generateRefreshToken,
-  verifyRefreshToken
+  verifyToken
 };
