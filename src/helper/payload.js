@@ -149,3 +149,26 @@ exports.class = (body = {}) => {
     return payload;
   }, {});
 };
+
+exports.grade = (body = {}) => {
+  const allowedFields = [
+    'studentid',
+    'test_type',
+    'listening_score',
+    'speaking_score',
+    'listening_score',
+    'reading_score',
+    'writing_score',
+    'final_score',
+    'description',
+    'date_taken',
+    'report'
+  ];
+
+  return allowedFields.reduce((payload, field) => {
+    if (body[field] !== undefined) {
+      payload[field] = body[field] === '' ? null : body[field];
+    }
+    return payload;
+  }, {});
+};
