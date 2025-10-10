@@ -90,3 +90,17 @@ exports.price = `
 	programid,
 	harga
 `;
+
+exports.grade = `
+	gradeid,
+	studentid,
+	test_type,
+	listening_score,
+	speaking_score,
+	reading_score,
+	writing_score,
+	final_score,
+	date_taken,
+	description,
+	report
+`;
