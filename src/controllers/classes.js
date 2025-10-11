@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase');
 const { class: select } = require('../helper/fields.js');
-const { class: payload } = require('../helper/fields.js');
+const { class: payload } = require('../helper/payload.js');
 
 // retrieve all data from class
 exports.getAll = async (req, res) => {
@@ -49,8 +49,7 @@ exports.getById = async (req, res) => {
 
     return res.json({
       success: true,
-      method: "GET",
-      data: data
+      data
     });
   } catch (error) {
     return res.status(500).json({
@@ -64,19 +63,16 @@ exports.getById = async (req, res) => {
 //create new class
 exports.create = async (req, res) => {
   try {
-    // retrieve data
-    const { class_code, description, levelid, lecturerid } = req.body;
+    const insert = payload(req.body);
 
-    if (!class_code || !levelid) {
+    if (!insert.class_code || !insert.levelid) {
       return res.status(400).json({ success: false, message: 'Class Code and Level are required for a new class' });
     }
 
     // Insert into table
     const { data, error } = await supabase
       .from('tbclass')
-      .insert({
-        class_code, description, levelid, lecturerid
-      })
+      .insert(insert)
       .select('classid')
       .single();
 
@@ -86,7 +82,7 @@ exports.create = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      data: data
+      data
     });
 
   } catch (error) {
@@ -103,18 +99,14 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { class_code, description, levelid, lecturerid } = req.body;
+    const insert = payload(req.body);
 
     // update class
-    let updateQuery = supabase
+    const { data, error } = await supabase
       .from('tbclass')
-      .update({
-        class_code, description, levelid, lecturerid
-      })
+      .update(insert)
       .eq('classid', id)
       .select(select);
-
-    let { data, error } = await updateQuery;
 
     if (error) throw error;
 
@@ -127,7 +119,7 @@ exports.update = async (req, res) => {
 
     return res.json({
       success: true,
-      data: data[0]
+      data
 
     });
   } catch (error) {

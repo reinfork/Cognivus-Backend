@@ -1,21 +1,16 @@
 const supabase = require('../config/supabase');
 const { student: select } = require('../helper/fields');
 const { student: payload } = require('../helper/payload');
-const { comparePassword, hashPassword, generateToken} = require('../utils/auth.js');
+const { hashPassword } = require('../utils/auth.js');
 
 //get all student data
 exports.getAll = async (req, res) => {
   try {
-    const id = req.query.classid;
-    let query = supabase
-        .from('tbstudent')
-        .select(select);
+    const { data, error } = await supabase
+      .from('tbstudent')
+      .select(select);
 
-    if(id){
-        query = query.eq('classid', id);
-    }
-
-    const { data, error } = await query;
+    if (error) throw error;
     
     res.json({
       success: true,
@@ -62,7 +57,6 @@ exports.create = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // --- Langkah 1: Buat entri di tabel 'tbuser' ---
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: 'Username, email, and password are required for the user account.' });
     }
@@ -85,7 +79,6 @@ exports.create = async (req, res) => {
     }
 
     const insert = { ...payload(req.body), userid: newUser.userid };
-    console.log(insert);
 
     const { data: newStudent, error: studentError } = await supabase
       .from('tbstudent')
@@ -135,7 +128,7 @@ exports.update = async (req, res) => {
     
     res.json({
       success: true,
-      data: data[0]
+      data
     });
   } catch (error) {
     console.error('Error updating student:', error);

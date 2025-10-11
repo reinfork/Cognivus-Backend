@@ -3,9 +3,15 @@ exports.course = `
 	course_code,
 	title,
 	upload_date,
-	file,
 	video_link,
-	classid
+	classid,
+	description,
+	tbcourse_files!inner(
+		cfid,
+		path,
+		url,
+		upload_date
+		)
 `;
 
 exports.class = `
@@ -102,5 +108,10 @@ exports.grade = `
 	final_score,
 	date_taken,
 	description,
-	report
+	tbreport_files!fk_report_grade(
+		rfid,
+		path,
+		url,
+		upload_date
+		)
 `;

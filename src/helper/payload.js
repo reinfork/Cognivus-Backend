@@ -120,10 +120,10 @@ exports.course = (body = {}) => {
   const allowedFields = [
     'title',
     'upload_date',
-    'file',
     'video_link',
     'classid',
-    'course_code'
+    'course_code',
+    'description'
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -162,7 +162,39 @@ exports.grade = (body = {}) => {
     'final_score',
     'description',
     'date_taken',
-    'report'
+    'description',
+  ];
+
+  return allowedFields.reduce((payload, field) => {
+    if (body[field] !== undefined) {
+      payload[field] = body[field] === '' ? null : body[field];
+    }
+    return payload;
+  }, {});
+};
+
+exports.report = (body = {}) => {
+  const allowedFields = [
+    'studentid',
+    'test_type',
+    'grade_id',
+    'upload_date',
+    'report_code',
+  ];
+
+  return allowedFields.reduce((payload, field) => {
+    if (body[field] !== undefined) {
+      payload[field] = body[field] === '' ? null : body[field];
+    }
+    return payload;
+  }, {});
+};
+
+exports.course_files = (body = {}) => {
+  const allowedFields = [
+    'courseid',
+    'path',
+    'url'
   ];
 
   return allowedFields.reduce((payload, field) => {

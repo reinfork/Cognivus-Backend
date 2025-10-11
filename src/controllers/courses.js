@@ -1,6 +1,8 @@
 const supabase = require('../config/supabase');
 const { course: select } = require('../helper/fields.js');
 const { course: payload } = require('../helper/payload.js');
+const courses = require('../models/course.js');
+const bucket = 'courses';
 
 exports.getAll = async (req, res) => {
   try {
@@ -12,7 +14,7 @@ exports.getAll = async (req, res) => {
 
     return res.json({
       success: true,
-      data: data
+      data
 
     });
   } catch (error) {
@@ -40,8 +42,7 @@ exports.getById = async (req, res) => {
 
     return res.json({
       success: true,
-      method: "get",
-      data: data
+      data
     });
   } catch (error) {
     return res.status(500).json({
@@ -55,29 +56,37 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     // retrieve data
-    const { title } = req.body; 
-    const { course_code, file, video_link, classid } = req.body;
+    const insert = payload(req.body);
+    const files = req.files;
 
-    if (!title) {
-      return res.status(400).json({ success: false, message: 'Title are required for a new course' });
+    if (!insert.title) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Title are required for a new course' 
+      });
     }
 
     // Insert into table
     const { data, error } = await supabase
       .from('tbcourse')
-      .insert({
-        title, course_code, file, video_link, classid
-      })
-      .select('courseid')
-      .single();
+      .insert(insert)
+      .select();
 
-    if (error) {
-      return res.status(409).json({ success: false, message: 'Error creating new course.', error: error.message });
+    if (error) throw error;
+
+    let results = [];
+
+    if(files){
+      for(const file of files){
+        let courseFile = await courses.create(data[0], file, bucket);
+        results.push(courseFile);
+      }
     }
 
     return res.status(201).json({
       success: true,
-      data: data
+      data,
+      files: results
     });
 
   } catch (error) {
@@ -94,18 +103,15 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, course_code, file, video_link, classid } = req.body;
+    const files = req.files;
+    const insert = payload(req.body);
 
     // update course
-    let updateQuery = supabase
+    const { data, error } = await supabase
       .from('tbcourse')
-      .update({
-        title, course_code, file, video_link, classid
-      })
+      .update(insert)
       .eq('courseid', id)
       .select(select);
-
-    let { data, error } = await updateQuery;
 
     if (error) throw error;
 
@@ -115,10 +121,19 @@ exports.update = async (req, res) => {
         message: 'Course not found.'
       });
     }
+    let results = [];
 
-    return res.json({
+    if(files){
+      for(const file of files){ 
+        let courseFile = await courses.create(data[0], file, bucket);
+        results.push(courseFile);
+      }
+    }
+
+    return res.status(201).json({
       success: true,
-      data: data[0]
+      data,
+      files: results
 
     });
   } catch (error) {
@@ -134,6 +149,7 @@ exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
 
+    //delete course record
     const { data, error } = await supabase
       .from('tbcourse')
       .delete()
@@ -149,9 +165,16 @@ exports.delete = async (req, res) => {
       });
     }
 
+    const files = data[0].tbcourse_files;
+
+    //remove files from bucket
+    if(files){
+      for(const file of files) await courses.delete(file, bucket);
+    }
+
     return res.json({
       success: true,
-      message: `Course id: ${id} deleted successfully`
+      message: `Course id: ${id} hard deleted successfully`
 
     });
   } catch (error) {

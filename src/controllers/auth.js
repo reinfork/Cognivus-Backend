@@ -83,8 +83,8 @@ exports.login = async (req, res) => {
     }
 
     //check password
-    const password_status = comparePassword(password, user.password);
-    if (!password_status) {
+    const password_status = await comparePassword(password, user.password);
+    if (!password_status || password_status === false) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
@@ -107,7 +107,7 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('server error:', error);
-    res.status(500).json({ success: false, message: 'An internal server error occurred.' });
+    res.status(500).json({ success: false, message: 'Invalid username/Server error' });
   }
 },
 

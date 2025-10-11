@@ -1,11 +1,13 @@
 const supabase = require('../config/supabase');
-const { grade: select } = require('../helper/fields.js');
-const { grade: payload } = require('../helper/payload.js');
+const { grade: select } = require('../helper/fields');
+const { grade: payload } = require('../helper/payload');
+const reports = require('../models/reports');
+const bucket = "reports";
 
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('tbgrades')
+      .from('tbgrade')
       .select(select);
 
     if (error) throw error;
@@ -13,7 +15,6 @@ exports.getAll = async (req, res) => {
     return res.json({
       success: true,
       data: data
-
     });
   } catch (error) {
     return res.status(500).json({
@@ -29,7 +30,7 @@ exports.getById = async (req, res) => {
 
   try {
     const { data, error } = await supabase
-      .from('tbgrades')
+      .from('tbgrade')
       .select(select)
       .eq('studentid', id)
       .single();
@@ -49,21 +50,38 @@ exports.getById = async (req, res) => {
   }
 };
 
+//insert new student grade
 exports.create = async (req, res) => {
   try {
     const insert = payload(req.body);
+    const file = req.file;
 
-    // Insert into table
+    if (!insert.test_type) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Test type are required for a new grade' 
+      });
+    }
+
+    //insert new grade into table
     const { data, error } = await supabase
-      .from('tbgrades')
+      .from('tbgrade')
       .insert(insert)
       .select();
 
     if(error) throw error;
+    let uploaded = []
+
+    //upload files
+    if(file) {
+      results = await reports.create(data[0], file, bucket);
+      uploaded.push(results);
+    };
 
     return res.status(201).json({
       success: true,
-      data
+      data,
+      uploaded
     });
 
   } catch (error) {
@@ -81,29 +99,28 @@ exports.update = async (req, res) => {
   try {
     const { id } = req.params;
     const insert = payload(req.body);
+    const file = req.file;
 
     // update grade
-    let updateQuery = supabase
-      .from('tbgrades')
+    const { data, error } = await supabase
+      .from('tbgrade')
       .update(insert)
-      .eq('studentid', id)
-      .select(select);
-
-    let { data, error } = await updateQuery;
+      .eq('gradeid', id)
+      .select();
 
     if (error) throw error;
+    let uploaded = [];
 
-    if (!data || data.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'grade not found.'
-      });
-    }
+    //find or upload
+    if (file) {
+      const results = await reports.createOrReplace(data[0], file, bucket);
+      uploaded.push(results);
+    };
 
-    return res.json({
+    return res.status(201).json({
       success: true,
-      data: data[0]
-
+      data,
+      uploaded
     });
   } catch (error) {
     return res.status(500).json({
@@ -114,14 +131,15 @@ exports.update = async (req, res) => {
   }
 };
 
+//remove student grade record
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
 
     const { data, error } = await supabase
-      .from('tbgrades')
+      .from('tbgrade')
       .delete()
-      .eq('studentid', id)
+      .eq('gradeid', id)
       .select(select);
 
     if (error) throw error;
@@ -133,9 +151,14 @@ exports.delete = async (req, res) => {
       });
     }
 
-    return res.json({
+    const file = data[0].tbreport_files;
+
+    //remove files from bucket
+    if(file) await reports.delete(file[0], bucket);
+
+    return res.status(200).json({
       success: true,
-      message: `students grade id: ${id} deleted successfully`
+      message: `students grade id: ${id} hard deleted successfully`
 
     });
   } catch (error) {
