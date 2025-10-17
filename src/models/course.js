@@ -1,16 +1,29 @@
-// This is a representation of your Supabase table
-// In Supabase, you don't need Sequelize models, but this helps with documentation
+const supabase = require('../config/supabase');
+const { user: select } = require('../helper/fields');
+const storage = require('../middleware/storage');
 
-class tbmaterials {
-  constructor(data) {
-    this.materialid = data.materialid;
-    this.material_code = data.material_code;
-    this.title = data.title;
-    this.upload_date = data.upload_date;
-    this.file = data.file;
-    this.video_link = data.video_link;
-    this.class_id = data.class_id;
-  }
+exports.create = async (data, file, bucket) => {
+  const path = `${data.classid}/${Date.now()}`;
+  await storage.upload(path, file, bucket);
+  const url = await storage.getPublicUrl(path, bucket);
+
+  //insert new report file
+  const {data: fileData, error: fileError} = await supabase
+  .from('tbcourse_files')
+  .insert({
+    'courseid': data.courseid,
+    'path': path,
+    'url': url
+  })
+  .select();
+ 
+  if(fileError) throw fileError;
+
+  return fileData;
+};
+
+exports.delete = async (file, bucket) => {
+  const { error: fileError} = await supabase.storage
+    .from(bucket)
+    .remove(file.path);
 }
-
-module.exports = Student;

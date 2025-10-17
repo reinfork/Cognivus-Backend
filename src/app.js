@@ -36,6 +36,8 @@ const teacher_levelRoutes = require('./routes/teacher_level');
 const programRoutes = require('./routes/programs');
 const priceRoutes = require('./routes/prices');
 const gradeRoutes = require('./routes/grades');
+const reportFileRoutes = require('./routes/report_files');
+const courseFileRoutes = require('./routes/course_files');
 
 // Use routes
 app.use('/api/auth', authRoutes, authLimiter);
@@ -49,12 +51,14 @@ app.use('/api/teacher_levels', teacher_levelRoutes, adminLimiter);
 app.use('/api/programs', programRoutes, adminLimiter);
 app.use('/api/prices', priceRoutes, adminLimiter);
 app.use('/api/grades', gradeRoutes, adminLimiter);
+app.use('/api/report_files', reportFileRoutes, adminLimiter);
+app.use('/api/course_files', courseFileRoutes, adminLimiter);
 
 
 // Test Supabase connection
 app.get('/api/test-supabase', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('student').select('*');
+    const { data, error } = await supabase.from('tblevel').select('*');
     
     if (error) {
       return res.status(500).json({
@@ -67,7 +71,6 @@ app.get('/api/test-supabase', async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Supabase connection successful',
-      data: data
     });
   } catch (error) {
     res.status(500).json({

@@ -2,7 +2,7 @@ const supabase = require('../config/supabase');
 const { teacher_level: payload } = require('../helper/payload');
 const { teacher_level: select } = require('../helper/fields');
 
-//read all user data
+//read all lecturer on level
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -18,13 +18,13 @@ exports.getAll = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: 'Error fetching lecturer on level',
       error: error.message
     });
   }
 };
 
-//read user by id
+//read lecturer on level by id
 exports.getById = async (req, res) => {
   const { id } = req.params;
 
@@ -32,7 +32,7 @@ exports.getById = async (req, res) => {
     const { data, error } = await supabase
       .from('tbteacher_level')
       .select(select)
-      .eq('tlid', id)
+      .eq('classid', id)
       .single();
     
     if (error) throw error;
@@ -44,13 +44,13 @@ exports.getById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: 'Error fetching lecturer on level',
       error: error.message
     });
   }
 };
 
-//insert new user
+//assign new lecturer on level
 exports.create = async (req, res) => {
   try {
     const insert = payload(req.body)
@@ -69,13 +69,13 @@ exports.create = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating user',
+      message: 'Error assigning lecturer on level',
       error: error.message
     });
   }
 };
 
-// update user data
+// update lecturer on level
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
@@ -84,7 +84,7 @@ exports.update = async (req, res) => {
     const { data, error } = await supabase
       .from('tbteacher_level')
       .update(insert)
-      .eq('tlid', id)
+      .eq('classid', id)
       .select();
     
     if (error) throw error;
@@ -92,7 +92,7 @@ exports.update = async (req, res) => {
     if (!data || data.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Lecturer on level not found.'
+        message: 'Lecturer not found on level.'
       });
     }
     
@@ -103,13 +103,13 @@ exports.update = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating user',
+      message: 'Error assigning lecturer on level',
       error: error.message
     });
   }
 };
 
-// delete user instance
+// unassign lecturer on level
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -117,25 +117,26 @@ exports.delete = async (req, res) => {
     const { data, error } = await supabase
       .from('tbteacher_level')
       .delete()
-      .eq('tlid', id);
+      .eq('tlid', id)
+      .select();
     
     if (error) throw error;
 
     if (!data || data.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Lecturer on level not found.'
+        message: 'Lecturer not found from level.'
       });
     }
     
     res.json({
       success: true,
-      message: 'user deleted successfully'
+      message: 'lecturer unassigned from level successfully'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting lecturer',
+      message: 'Error unassign lecturer from level',
       error: error.message
     });
   }
