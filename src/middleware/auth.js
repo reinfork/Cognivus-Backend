@@ -1,23 +1,22 @@
 const supabase = require('../config/supabase');
 const { verifyToken } = require('../utils/auth.js');
 
-const authenticateToken = async (req, res, next) => {
+exports.authenticateToken = async (req, res, next) => {
   // Bypass authentication in development environment
   if (process.env.NODE_ENV === 'development') {
     // Optionally, mock a user object for development testing
     req.user = {
-      id: 'dev-user-id',
+      id: 0,
       email: 'dev@example.com',
-      role: 'developer',
+      roleid: 5,
       // Add any other mock properties you need
     };
     console.log('Development mode: Authentication bypassed');
     return next();
   }
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
+    const token = req.cookies.accessToken;
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -46,4 +45,32 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken };
+exports.authenticateRefresh = async (req, res, next) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required'
+      });
+    }
+    
+    // Verify the token
+    const payload = verifyToken(token);
+    
+    if (!payload) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+    req.user = payload;
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Authentication error',
+      error: error.message
+    });
+  }
+};

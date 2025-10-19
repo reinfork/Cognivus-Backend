@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/auth.js');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authenticateRefresh } = require('../middleware/auth');
 const passport = require('../config/passport');
 
 //inform auth is working
@@ -15,8 +15,9 @@ router.get('/', (req, res) => {
 // Public routes
 router.post('/register', controller.register);
 router.post('/login', controller.login);
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
-router.get('/google/callback', passport.authenticate('google', { session: false }), controller.googleCallback)
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback', passport.authenticate('google', { session: false }), controller.googleCallback);
+router.post('/refresh', authenticateRefresh, controller.refresh);
 
 // Protected routes
 router.get('/profile', authenticateToken, controller.getProfile);

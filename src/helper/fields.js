@@ -6,7 +6,7 @@ exports.course = `
 	video_link,
 	classid,
 	description,
-	tbcourse_files!inner(
+	tbcourse_files(
 		cfid,
 		path,
 		url,
