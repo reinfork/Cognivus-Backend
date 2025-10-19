@@ -49,6 +49,8 @@ exports.user = (body = {}) => {
     'roleid',
     'password',
     'is_active',
+    'google_id',
+    'raw_meta_data'
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -156,13 +158,11 @@ exports.grade = (body = {}) => {
     'test_type',
     'listening_score',
     'speaking_score',
-    'listening_score',
     'reading_score',
     'writing_score',
     'final_score',
     'description',
-    'date_taken',
-    'description',
+    'date_taken'
   ];
 
   return allowedFields.reduce((payload, field) => {

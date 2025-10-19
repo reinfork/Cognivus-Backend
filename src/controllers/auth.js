@@ -1,8 +1,10 @@
 const supabase = require('../config/supabase');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { comparePassword, hashPassword, generateToken} = require('../utils/auth.js');
+const helper = require('../utils/auth.js');
 const { user: select } = require('../helper/fields');
+const { user: payload } = require('../helper/payload');
+require('dotenv').config();
 
 const roleMapping = {
   1: 'student',
@@ -14,7 +16,7 @@ const roleMapping = {
 
 exports.register = async (req, res) => {
   try {
-    const { email, password, full_name, role } = req.body;
+    const insert = payload(req.body);
     
     //validate input
     if (!email || !password || !full_name) {
@@ -25,19 +27,12 @@ exports.register = async (req, res) => {
     }
 
     //hash password
-    const hashed_password = hashPassword(password);
+    const hashed_password = helper.hashPassword(password);
 
     //create user
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      hashed_password,
-      options: {
-        data: {
-          full_name,
-          role: role || 'student'
-        }
-      }
-    });
+    const { data, error } = await supabase
+      .from('tbuser')
+      .insert(payload)
     
     if (error) {
       return res.status(400).json({
@@ -83,27 +78,39 @@ exports.login = async (req, res) => {
     }
 
     //check password
-    const password_status = await comparePassword(password, user.password);
+    const password_status = await helper.comparePassword(password, user.password);
     if (!password_status || password_status === false) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
     //create JWT
-    const payload = { id: user.userid, username: user.username, role: roleMapping[role] };
-    const token = generateToken(payload);
+    const accessPayload = { id: user.userid, username: user.username, roleid: user.roleid };
+    const refreshPayload = { id: user.userid, roleid: user.roleid };
+    const accessToken = helper.generateToken(accessPayload);
+    const refreshToken = helper.generateRefresh(refreshPayload);
 
-    // send response
-    res.status(200).json({
-      success: true,
-      message: 'Login berhasil',
-      token: token,
-      user: {
-        id: user.userid,
-        username: user.username,
-        email: user.email,
-      },
-      role: roleMapping[role] // Kirim nama peran ke frontend
+    //access token cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000
     });
+
+    //refresh token cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      maxAge: 14 * 24 * 60 * 60 * 1000 //days
+    });
+
+    res.status(300).json({
+      success: true,
+      message: 'login success, redirecting'
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}/login-success`);
 
   } catch (error) {
     console.error('server error:', error);
@@ -111,6 +118,7 @@ exports.login = async (req, res) => {
   }
 },
 
+//get account profile
 exports.getProfile = async (req, res) => {
   try {
     const { id } = req.user;
@@ -146,22 +154,21 @@ exports.getProfile = async (req, res) => {
   }
 },
 
+//account logout
 exports.logout = async (req, res) => {
   try {
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: 'Logout failed',
-        error: error.message
-      });
-    }
-    
-    res.status(200).json({
+    const token = req.cookies.refresh_token;
+
+    refreshTokens = refreshTokens.filter(t => t !== token);
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+
+    res.status(200).json({ 
       success: true,
-      message: 'Logout successful'
+      message: 'Logged out' 
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -176,8 +183,76 @@ exports.googleCallback = (req, res) => {
   const user = req.user;
 
   //create JWT
-  const payload = { id: user.userid, username: user.username, role: roleMapping[role] };
-  const token = generateToken(payload);
+  const accessPayload = { id: user.userid, username: user.username, roleid: 1 };
+  const refreshPayload = { id: user.userid, roleid: 1 };
+  const accessToken = helper.generateToken(accessPayload);
+  const refreshToken = helper.generateRefresh(refreshPayload);
 
-  res.json({ token, user });
+  //access token cookies
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000
+  });
+
+  //refresh token cookies
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
+  });
+
+  res.status(300).json({
+    success: true,
+    message: 'login success, redirecting'
+  });
+
+  res.redirect(`${process.env.FRONTEND_URL}/login-success`);
+};
+
+//issue new tokens
+exports.refresh = (req, res) => {
+  const user = req.user;
+  const token = req.cookies.refreshToken;
+
+  if (!token || !user)
+    return res.status(403).json({ success: false, message: 'Refresh token required' });
+
+  const verifiedToken = helper.verifyRefresh(token);
+
+  if(!verifiedToken)
+    return res.status(403).json({ success: false, message: 'Refresh token invalid/expired' });
+
+  //create JWT
+  const accessPayload = { id: user.userid, username: user.username, roleid: user.roleid };
+  const refreshPayload = { id: user.userid, roleid: user.roleid };
+  const accessToken = helper.generateToken(accessPayload);
+  const refreshToken = helper.generateRefresh(refreshPayload);
+
+  //remove cookies
+  res.clearCookie('accessToken');
+  res.clearCookie('refreshToken');
+
+  //access token cookies
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000
+  });
+
+  //refresh token cookies
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'token refreshed'
+  })
 }
