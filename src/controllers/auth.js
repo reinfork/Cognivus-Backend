@@ -58,6 +58,8 @@ exports.register = async (req, res) => {
 
 //user login
 exports.login = async (req, res) => {
+  const headers = req.headers;
+  const ip = req.ip;
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -89,11 +91,27 @@ exports.login = async (req, res) => {
     const accessToken = helper.generateToken(accessPayload);
     const refreshToken = helper.generateRefresh(refreshPayload);
 
+    //hash token
+    const hash = helper.hashPassword(refreshToken);
+
+    //insert new token
+    const { data: refresh, error: refreshError } = await supabase
+      .from('tbrefresh_tokens')
+      .insert({
+        'userid': user.userid,
+        'token': hash,
+        'user_agent': headers['user-agent'],
+        'ip_address': ip,
+        'expires_at': new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      })
+
+    if (refreshError) throw refreshError;
+
     //access token cookies
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: false,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 15 * 60 * 1000
     });
 
@@ -101,13 +119,8 @@ exports.login = async (req, res) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: false,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 14 * 24 * 60 * 60 * 1000 //days
-    });
-
-    res.status(300).json({
-      success: true,
-      message: 'login success, redirecting'
     });
 
     res.redirect(`${process.env.FRONTEND_URL}/login-success`);
@@ -157,10 +170,22 @@ exports.getProfile = async (req, res) => {
 //account logout
 exports.logout = async (req, res) => {
   try {
-    const token = req.cookies.refresh_token;
+    const token = req.cookies.refreshToken;
+    const hash1 = helper.hashPassword(token);
 
-    refreshTokens = refreshTokens.filter(t => t !== token);
+    //invalidating token
+    const { data: validateData, error: validateError } = await supabase
+      .from('tbrefresh_tokens')
+      .update({
+        'revoked': true,
+        'expires_at': Date.now()
+      })
+      .eq('token', hash1)
+      .select();
 
+    if (validateError) throw validateError;
+
+    //clearing cookies
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
 
@@ -179,80 +204,134 @@ exports.logout = async (req, res) => {
 }
 
 //google callback
-exports.googleCallback = (req, res) => {
+exports.googleCallback = async (req, res) => {
   const user = req.user;
+  const headers = req.headers;
+  const ip = req.ip;
 
-  //create JWT
-  const accessPayload = { id: user.userid, username: user.username, roleid: 1 };
-  const refreshPayload = { id: user.userid, roleid: 1 };
-  const accessToken = helper.generateToken(accessPayload);
-  const refreshToken = helper.generateRefresh(refreshPayload);
+  try{
+    //create JWT
+    const accessPayload = { id: user.userid, username: user.username, roleid: 1 };
+    const refreshPayload = { id: user.userid, roleid: 1 };
+    const accessToken = helper.generateToken(accessPayload);
+    const refreshToken = helper.generateRefresh(refreshPayload);
 
-  //access token cookies
-  res.cookie('accessToken', accessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'strict',
-    maxAge: 15 * 60 * 1000
-  });
+    //hash token
+    const hash = helper.hashPassword(refreshToken);
 
-  //refresh token cookies
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'strict',
-    maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
-  });
+    //insert new token
+    const { data: refresh, error: refreshError } = await supabase
+      .from('tbrefresh_tokens')
+      .insert({
+        'userid': user.userid,
+        'token': hash,
+        'user_agent': headers['user-agent'],
+        'ip_address': ip,
+        'expires_at': new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      })
 
-  res.status(300).json({
-    success: true,
-    message: 'login success, redirecting'
-  });
+    if (refreshError) throw refreshError;
 
-  res.redirect(`${process.env.FRONTEND_URL}/login-success`);
+    //access token cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000
+    });
+
+    //refresh token cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'none',
+      maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
+    });
+
+    res.redirect(`${process.env.FRONTEND_URL}/login-success`);
+  } catch (error){
+    res.status(500).json({
+      success: false,
+      message: 'Error in Google Callback',
+      error: error.message
+    });
+  }
 };
 
 //issue new tokens
-exports.refresh = (req, res) => {
+exports.refresh = async (req, res) => {
   const user = req.user;
   const token = req.cookies.refreshToken;
+  const headers = req.headers;
+  const ip = req.ip;
 
-  if (!token || !user)
-    return res.status(403).json({ success: false, message: 'Refresh token required' });
+  try{
+    const hash1 = helper.hashPassword(refreshToken);
 
-  const verifiedToken = helper.verifyRefresh(token);
+    //invalidating token
+    const { data: validateData, error: validateError } = await supabase
+      .from('tbrefresh_tokens')
+      .update({
+        'revoked': true,
+        'expires_at': Date.now()
+      })
+      .eq('token', hash1);
 
-  if(!verifiedToken)
-    return res.status(403).json({ success: false, message: 'Refresh token invalid/expired' });
+    if (validateError) throw validateError;
 
-  //create JWT
-  const accessPayload = { id: user.userid, username: user.username, roleid: user.roleid };
-  const refreshPayload = { id: user.userid, roleid: user.roleid };
-  const accessToken = helper.generateToken(accessPayload);
-  const refreshToken = helper.generateRefresh(refreshPayload);
+    //create JWT
+    const accessPayload = { id: user.userid, username: user.username, roleid: user.roleid };
+    const refreshPayload = { id: user.userid, roleid: user.roleid };
+    const accessToken = helper.generateToken(accessPayload);
+    const refreshToken = helper.generateRefresh(refreshPayload);
 
-  //remove cookies
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+    //hash token
+    const hash = helper.hashPassword(refreshToken);
 
-  //access token cookies
-  res.cookie('accessToken', accessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'strict',
-    maxAge: 15 * 60 * 1000
-  });
+    //rotate token
+    //insert new token
+    const { data: refresh, error: refreshError } = await supabase
+      .from('tbrefresh_tokens')
+      .insert({
+        'userid': user.userid,
+        'token': hash,
+        'user_agent': headers['user-agent'],
+        'ip_address': ip,
+        'expires_at': new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      })
 
-  //refresh token cookies
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'strict',
-    maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
-  });
+    if (refreshError) throw refreshError;
 
-  res.status(200).json({
-    success: true,
-    message: 'token refreshed'
-  })
+    //remove cookies
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+
+    //access token cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000
+    });
+
+    //refresh token cookies
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'none',
+      maxAge: 14 * 24 * 60 * 60 * 1000 //14 days
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'token refreshed'
+    })
+
+  } catch (error){
+    res.status(500).json({
+      success: false,
+      message: 'Error while refresh token',
+      error: error.message
+    });
+  }
 }

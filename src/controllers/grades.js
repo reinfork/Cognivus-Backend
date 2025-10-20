@@ -33,13 +33,13 @@ exports.getById = async (req, res) => {
       .from('tbgrade')
       .select(select)
       .eq('studentid', id)
-      .single();
+      .select();
     
     if (error) throw error;
     
-    res.json({
+    res.status(200).json({
       success: true,
-      data: data
+      data
     });
   } catch (error) {
     return res.status(500).json({
@@ -74,7 +74,7 @@ exports.create = async (req, res) => {
 
     //upload files
     if(file) {
-      results = await reports.create(data[0], file, bucket);
+      const results = await reports.create(data[0], file, bucket);
       uploaded.push(results);
     };
 

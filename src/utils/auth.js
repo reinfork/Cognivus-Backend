@@ -29,14 +29,5 @@ exports.verifyToken = (token) => {
 
 //generate refresh tokens
 exports.generateRefresh = (payload) => {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '30d' })
-};
-
-// verify refresh token
-exports.verifyRefresh = (token) => {
-  try {
-    return jwt.verify(token, JWT_REFRESH_SECRET);
-  } catch (error) {
-    return null;
-  }
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '14d' })
 };
