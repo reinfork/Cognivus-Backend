@@ -76,11 +76,11 @@ exports.login = async (req, res) => {
       .eq('username', username)
       .single();
 
-    let role = user.roleid;
-
     if (userError || !user) {
       return res.status(401).json({ success: false, message: 'Invalid Username' });
     }
+
+    let role = user.roleid;
 
     //check password
     const password_status = await comparePassword(password, user.password);
@@ -176,7 +176,7 @@ exports.googleCallback = (req, res) => {
   const user = req.user;
 
   //create JWT
-  const payload = { id: user.userid, username: user.username, role: roleMapping[role] };
+  const payload = { id: user.userid, username: user.username, role: roleMapping[user.roleid] };
   const token = generateToken(payload);
 
   res.json({ token, user });

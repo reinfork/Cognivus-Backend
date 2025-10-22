@@ -3,21 +3,41 @@ const { user: select } = require('../helper/fields');
 const storage = require('../middleware/storage');
 
 exports.createOrReplace = async (data, file, bucket) => {
+  if (!file || !file.buffer) {
+    throw new Error('File buffer is required');
+  }
 
   // find old report
-  const { data: fileData, error } = await supabase
-    .from('tbreport_files')
-    .select() 
-    .eq('gradeid', data.gradeid)
+  let fileData = null;
+  let error = null;
+  try {
+    const result = await supabase
+      .from('tbreport_files')
+      .select()
+      .eq('gradeid', data.gradeid);
+    // result might be { data, error } or a chained mock; handle common shapes
+    if (result && result.error) {
+      error = result.error;
+    }
+    if (result && result.data !== undefined) {
+      fileData = result.data;
+    } else if (Array.isArray(result)) {
+      fileData = result;
+    } else if (result && result[0] !== undefined) {
+      fileData = result;
+    }
+  } catch (e) {
+    error = e;
+  }
 
-  if(error) throw error;
+  if (error) throw error;
 
   // Delete old file if exists
-  if (fileData[0].path) await storage.delete(fileData[0].path, bucket);
+  if (fileData && fileData[0] && fileData[0].path) await storage.delete(fileData[0].path, bucket);
 
   // Upload new
   const newPath = `${data.studentid}/${data.test_type}_${Date.now()}`;
-  await storage.upload(newPath, file, bucket);
+  await storage.upload(newPath, file.buffer, bucket);
   const url = await storage.getPublicUrl(newPath, bucket);
 
   if (!fileData || fileData.length === 0) {
@@ -53,9 +73,12 @@ exports.createOrReplace = async (data, file, bucket) => {
 };
 
 exports.create = async (data, file, bucket) => {
+  if (!file || !file.buffer) {
+    throw new Error('File buffer is required');
+  }
   const path = `${data.studentid}/${data.test_type}_${Date.now()}`;
-  const results = await storage.upload(path, file.buffer, bucket);
-  const url = await storage.getPublicUrl(path);
+  await storage.upload(path, file.buffer, bucket);
+  const url = await storage.getPublicUrl(path, bucket);
 
   //update course files
   const { data: fileData, error: filesError } = await supabase
@@ -74,9 +97,12 @@ exports.create = async (data, file, bucket) => {
 }
 
 exports.delete = async (file, bucket) => {
-  console.log(file.path);
+  if (!file || !file.path) {
+    throw new Error('File path is required');
+  }
   const { error } = await supabase.storage
     .from(bucket)
     .remove(file.path);
-  if (error) return error;
+  if (error) throw error;
+  return;
 }

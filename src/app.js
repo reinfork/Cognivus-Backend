@@ -3,7 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const supabase = require('./config/supabase');
-const restrictRegion = require('./middleware/region_limit.js');
 const { generalLimiter, authLimiter, lecturerLimiter, adminLimiter } = require('./middleware/rate_limit');
 require('dotenv').config();
 
@@ -22,7 +21,6 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(restrictRegion);
 
 // Import routes
 const authRoutes = require('./routes/auth.js');

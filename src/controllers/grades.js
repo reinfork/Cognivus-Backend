@@ -32,9 +32,8 @@ exports.getById = async (req, res) => {
     const { data, error } = await supabase
       .from('tbgrade')
       .select(select)
-      .eq('studentid', id)
-      .single();
-    
+      .eq('studentid', id);
+
     if (error) throw error;
     
     res.json({
@@ -112,7 +111,7 @@ exports.update = async (req, res) => {
     let uploaded = [];
 
     //find or upload
-    if (file) {
+    if (file && file.length > 0) {
       const results = await reports.createOrReplace(data[0], file, bucket);
       uploaded.push(results);
     };
