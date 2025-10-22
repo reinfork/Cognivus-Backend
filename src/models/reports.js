@@ -1,7 +1,6 @@
 const supabase = require('../config/supabase');
 const { user: select } = require('../helper/fields');
 const storage = require('../middleware/storage');
-const bucket = 'reports';
 
 exports.createOrReplace = async (data, file, bucket) => {
 
