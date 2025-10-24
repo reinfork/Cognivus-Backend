@@ -171,13 +171,13 @@ exports.logout = async (req, res) => {
   }
 }
 
-//google callback
 exports.googleCallback = (req, res) => {
   const user = req.user;
+  const role = roleMapping[user.roleid];
 
-  //create JWT
-  const payload = { id: user.userid, username: user.username, role: roleMapping[role] };
+  const payload = { id: user.userid, username: user.username, role };
   const token = generateToken(payload);
 
-  res.json({ token, user });
+  const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${token}&role=${role}&id=${user.userid}&username=${user.username}&email=${user.email}`;
+  res.redirect(redirectUrl);
 }

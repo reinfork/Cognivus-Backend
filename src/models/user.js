@@ -1,10 +1,8 @@
-// Using Supabase for development
 const supabase = require('../config/supabase');
 const { user: select } = require('../helper/fields');
 
 exports.findOrCreate = async (profile) => {
-  // Check if user exists
-  const { data: existingUser, error } = await supabase
+  const { data: existingUser, error: findError } = await supabase
     .from('tbuser')
     .select(select)
     .eq('google_id', profile.id)
@@ -14,20 +12,43 @@ exports.findOrCreate = async (profile) => {
     return existingUser;
   }
 
-  const username = profile.given_name.toLowerCase() + profile.family_name.toLowerCase();
-
-  // Create new user
-  const { data: newUser , error: userError } = await supabase
+  const email = profile.emails[0].value;
+  const displayName = profile.displayName || email.split('@')[0];
+  
+  let username = displayName.toLowerCase().replace(/\s+/g, '');
+  const { data: existingUsername } = await supabase
     .from('tbuser')
-    .insert([
-      {
-        username,
-        google_id: profile.id,
-        email: profile.emails[0].value,
-        roleid: 1
-      }
-    ])
+    .select('username')
+    .eq('username', username)
     .single();
+
+  if (existingUsername) {
+    username = `${username}${Math.floor(Math.random() * 10000)}`;
+  }
+
+  const { data: newUser, error: userError } = await supabase
+    .from('tbuser')
+    .insert({
+      username,
+      google_id: profile.id,
+      email,
+      roleid: 1,
+      is_active: true
+    })
+    .select(select)
+    .single();
+
+  if (userError) throw userError;
+
+  const { error: studentError } = await supabase
+    .from('tbstudent')
+    .insert({
+      userid: newUser.userid,
+      fullname: displayName,
+      classid: 4
+    });
+
+  if (studentError) throw studentError;
 
   return newUser;
 }
