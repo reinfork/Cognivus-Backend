@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const { user: payload } = require('../helper/payload');
 const { user: select } = require('../helper/fields');
+const { hashPassword } = require('../utils/auth.js');
 
 //read all user data
 exports.getAll = async (req, res) => {
@@ -53,7 +54,12 @@ exports.getById = async (req, res) => {
 //insert new user
 exports.create = async (req, res) => {
   try {
-    const insert = payload(req.body)
+    let insert = payload(req.body);
+    
+    // Hash password if provided
+    if (insert.password) {
+      insert.password = await hashPassword(insert.password);
+    }
     
     const { data, error } = await supabase
       .from('tbuser')
@@ -79,7 +85,12 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const insert = payload(req.body);
+    let insert = payload(req.body);
+    
+    // Hash password if it's being updated
+    if (insert.password) {
+      insert.password = await hashPassword(insert.password);
+    }
     
     const { data, error } = await supabase
       .from('tbuser')
