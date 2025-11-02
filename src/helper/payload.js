@@ -139,7 +139,11 @@ exports.class = (body = {}) => {
     'levelid',
     'class_code',
     'description',
-    'lecturerid'
+    'lecturerid',
+    'schedule_time',
+    'schedule_day',
+    'schedule_time_2',
+    'schedule_day_2'
   ];
 
   return allowedFields.reduce((payload, field) => {

@@ -112,7 +112,8 @@ exports.update = async (req, res) => {
       .from('tblecturer')
       .update(insert)
       .eq('userid', id)
-      .select();
+      .select()
+      .single();
 
     if (error) throw error;
 

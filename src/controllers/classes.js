@@ -8,7 +8,7 @@ exports.getAll = async (req, res) => {
     const id = req.query.lecturerid;
     let query = supabase
         .from('tbclass')
-        .select(select);
+        .select();
 
     if(id){
         query = query.eq('lecturerid', id);
@@ -73,8 +73,7 @@ exports.create = async (req, res) => {
     const { data, error } = await supabase
       .from('tbclass')
       .insert(insert)
-      .select('classid')
-      .single();
+      .select();
 
     if (error) {
       return res.status(409).json({ success: false, message: 'Error creating new class.', error: error.message });
@@ -106,7 +105,8 @@ exports.update = async (req, res) => {
       .from('tbclass')
       .update(insert)
       .eq('classid', id)
-      .select(select);
+      .select()
+      .single();
 
     if (error) throw error;
 
@@ -120,8 +120,8 @@ exports.update = async (req, res) => {
     return res.json({
       success: true,
       data
-
     });
+
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -140,6 +140,7 @@ exports.delete = async (req, res) => {
       .from('tbclass')
       .delete()
       .eq('classid', id)
+      .select();
 
     if (error) throw error;
 
