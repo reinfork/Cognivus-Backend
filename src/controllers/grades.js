@@ -2,6 +2,7 @@ const supabase = require('../config/supabase');
 const { grade: select } = require('../helper/fields');
 const { grade: payload } = require('../helper/payload');
 const reports = require('../models/reports');
+const {grade} = require('../helper/whatsapp');
 const bucket = "reports";
 
 exports.getAll = async (req, res) => {
@@ -32,8 +33,7 @@ exports.getById = async (req, res) => {
     const { data, error } = await supabase
       .from('tbgrade')
       .select(select)
-      .eq('studentid', id)
-      .single();
+      .eq('studentid', id);
     
     if (error) throw error;
     
@@ -106,7 +106,8 @@ exports.update = async (req, res) => {
       .from('tbgrade')
       .update(insert)
       .eq('gradeid', id)
-      .select();
+      .select()
+      .single();
 
     if (error) throw error;
     let uploaded = [];
