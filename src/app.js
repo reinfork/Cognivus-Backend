@@ -38,23 +38,23 @@ const reportFileRoutes = require('./routes/report_files');
 const courseFileRoutes = require('./routes/course_files');
 
 // Use routes
-app.use('/api/auth', authRoutes, authLimiter);
-app.use('/api/students', studentRoutes, generalLimiter);
-app.use('/api/lecturers', lecturerRoutes, lecturerLimiter);
-app.use('/api/users', userRoutes, adminLimiter);
-app.use('/api/courses', courseRoutes, generalLimiter);
-app.use('/api/classes', classRoutes, adminLimiter);
-app.use('/api/levels', levelsRoutes, adminLimiter);
-app.use('/api/teacher_levels', teacher_levelRoutes, adminLimiter);
-app.use('/api/programs', programRoutes, adminLimiter);
-app.use('/api/prices', priceRoutes, adminLimiter);
-app.use('/api/grades', gradeRoutes, adminLimiter);
-app.use('/api/report_files', reportFileRoutes, adminLimiter);
-app.use('/api/course_files', courseFileRoutes, adminLimiter);
+app.use('/auth', authRoutes, authLimiter);
+app.use('/students', studentRoutes, generalLimiter);
+app.use('/lecturers', lecturerRoutes, lecturerLimiter);
+app.use('/users', userRoutes, adminLimiter);
+app.use('/courses', courseRoutes, generalLimiter);
+app.use('/classes', classRoutes, adminLimiter);
+app.use('/levels', levelsRoutes, adminLimiter);
+app.use('/teacher_levels', teacher_levelRoutes, adminLimiter);
+app.use('/programs', programRoutes, adminLimiter);
+app.use('/prices', priceRoutes, adminLimiter);
+app.use('/grades', gradeRoutes, adminLimiter);
+app.use('/report_files', reportFileRoutes, adminLimiter);
+app.use('/course_files', courseFileRoutes, adminLimiter);
 
 
 // Test Supabase connection
-app.get('/api/test-supabase', async (req, res) => {
+app.get('/test-supabase', async (req, res) => {
   try {
     const { data, error } = await supabase.from('tblevel').select('*');
     
@@ -80,7 +80,7 @@ app.get('/api/test-supabase', async (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Server is running',
