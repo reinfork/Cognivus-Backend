@@ -1,31 +1,43 @@
-const sequelize = require('../config/database');
-const User = require('./user');
-const Course = require('./course');
-const Enrollment = require('./enrollment');
+'use strict';
 
-// Define associations
-User.hasMany(Enrollment, { foreignKey: 'userId' });
-Enrollment.belongsTo(User, { foreignKey: 'userId' });
+const fs = require('fs');
+const path = require('path');
+const Sequelize = require('sequelize');
+const process = require('process');
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || 'development';
+const config = require(__dirname + '/../config/config.json')[env];
+const db = {};
 
-Course.hasMany(Enrollment, { foreignKey: 'courseId' });
-Enrollment.belongsTo(Course, { foreignKey: 'courseId' });
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(config.database, config.username, config.password, config);
+}
 
-// Sync database
-const syncDatabase = async () => {
-  try {
-    await sequelize.sync({ force: process.env.NODE_ENV === 'development' });
-    console.log('Database synced successfully');
-    return true;
-  } catch (error) {
-    console.error('Error syncing database:', error);
-    return false;
+fs
+  .readdirSync(__dirname)
+  .filter(file => {
+    return (
+      file.indexOf('.') !== 0 &&
+      file !== basename &&
+      file.slice(-3) === '.js' &&
+      file.indexOf('.test.js') === -1
+    );
+  })
+  .forEach(file => {
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
+  });
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
   }
-};
+});
 
-module.exports = {
-  sequelize,
-  User,
-  Course,
-  Enrollment,
-  syncDatabase
-};
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
