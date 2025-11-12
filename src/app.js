@@ -52,6 +52,7 @@ app.use('/prices', priceRoutes, adminLimiter);
 app.use('/grades', gradeRoutes, adminLimiter);
 app.use('/report_files', reportFileRoutes, adminLimiter);
 app.use('/course_files', courseFileRoutes, adminLimiter);
+app.use('/dashboard', dashboardRoutes, adminLimiter);
 
 
 // Test Supabase connection
