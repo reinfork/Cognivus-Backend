@@ -57,7 +57,17 @@ exports.lecturer = `
 	  userid,
 	  username,
 	  email
+	  ),
+	tbclass(
+	  classid,
+	  class_code,
+	  description,
+	  levelid,
+	  level:tblevel(
+	    levelid,
+	    name
 	  )
+	)
 `;
 
 exports.user = `
