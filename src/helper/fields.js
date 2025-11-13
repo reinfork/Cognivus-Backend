@@ -118,7 +118,7 @@ exports.grade = `
 	final_score,
 	date_taken,
 	description,
-	tbreport_files!fk_report_grade(
+	tbreport_files(
 		rfid,
 		path,
 		url,
