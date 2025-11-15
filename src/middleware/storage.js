@@ -1,7 +1,6 @@
 const supabase = require('../config/supabase');
 
 exports.upload = async (path, file, bucket) => {
-  console.log(bucket);
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, file.buffer, { contentType: file.mimetype, upsert: true });
