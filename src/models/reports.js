@@ -55,7 +55,7 @@ exports.createOrReplace = async (data, file, bucket) => {
 exports.create = async (data, file, bucket) => {
   const path = `${data.studentid}/${data.test_type}_${Date.now()}`;
   const results = await storage.upload(path, file.buffer, bucket);
-  const url = await storage.getPublicUrl(path);
+  const url = await storage.getPublicUrl(path, bucket);
 
   //update course files
   const { data: fileData, error: filesError } = await supabase

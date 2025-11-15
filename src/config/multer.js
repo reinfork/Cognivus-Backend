@@ -1,4 +1,3 @@
-// middlewares/upload.js
 const multer = require('multer');
 
 // Using memory storage for Supabase uploads

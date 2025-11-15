@@ -111,8 +111,7 @@ exports.update = async (req, res) => {
       .from('tbcourse')
       .update(insert)
       .eq('courseid', id)
-      .select(select)
-      .single();
+      .select();
 
     if (error) throw error;
 

@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 
 exports.upload = async (path, file, bucket) => {
+  console.log(bucket);
   const { error } = await supabase.storage
     .from(bucket)
     .upload(path, file.buffer, { contentType: file.mimetype, upsert: true });
@@ -22,6 +23,6 @@ exports.getPublicUrl = async(path, bucket) => {
   const { data, error } = await supabase.storage
     .from(bucket)
     .getPublicUrl(path);
-    if(error) throw error;
-    return data.publicUrl;
+  if(error) throw error;
+  return data.publicUrl;
 }

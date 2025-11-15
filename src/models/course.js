@@ -4,7 +4,7 @@ const storage = require('../middleware/storage');
 
 exports.create = async (data, file, bucket) => {
   const path = `${data.classid}/${Date.now()}`;
-  await storage.upload(path, file, bucket);
+  await storage.upload(path, file, 'courses');
   const url = await storage.getPublicUrl(path, bucket);
 
   //insert new report file
@@ -18,7 +18,7 @@ exports.create = async (data, file, bucket) => {
   .select();
  
   if(fileError) throw fileError;
-
+ 
   return fileData;
 };
 

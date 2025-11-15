@@ -106,8 +106,7 @@ exports.update = async (req, res) => {
       .from('tbgrade')
       .update(insert)
       .eq('gradeid', id)
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
     let uploaded = [];
