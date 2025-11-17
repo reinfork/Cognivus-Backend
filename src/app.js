@@ -37,6 +37,7 @@ const gradeRoutes = require('./routes/grades');
 const reportFileRoutes = require('./routes/report_files');
 const courseFileRoutes = require('./routes/course_files');
 const dashboardRoutes = require('./routes/dashboard');
+const paymentRoutes = require('./routes/payment');
 
 // Use routes
 app.use('/auth', authRoutes, authLimiter);
@@ -53,7 +54,7 @@ app.use('/grades', gradeRoutes, adminLimiter);
 app.use('/report_files', reportFileRoutes, adminLimiter);
 app.use('/course_files', courseFileRoutes, adminLimiter);
 app.use('/dashboard', dashboardRoutes, adminLimiter);
-
+app.use('/payment', paymentRoutes, adminLimiter);
 
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {

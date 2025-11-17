@@ -13,7 +13,7 @@ exports.createOrReplace = async (data, file, bucket) => {
   if(error) throw error;
 
   // Delete old file if exists
-  if (fileData[0].path) await storage.delete(fileData[0].path, bucket);
+  if (Array.isArray(fileData) && fileData.length != 0) await storage.delete(fileData[0].path, bucket);
 
   // Upload new
   const newPath = `${data.studentid}/${data.test_type}_${Date.now()}`;
@@ -74,7 +74,6 @@ exports.create = async (data, file, bucket) => {
 }
 
 exports.delete = async (file, bucket) => {
-  console.log(file.path);
   const { error } = await supabase.storage
     .from(bucket)
     .remove(file.path);
