@@ -15,9 +15,6 @@ exports.generate = async (req, res) => {
 			}
 		}
 
-		console.log(parameter);
-		console.log(snap);
-
 		const transaction = await snap.createTransaction(parameter);
 
 		console.log(transaction);
