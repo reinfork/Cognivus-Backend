@@ -1,10 +1,11 @@
 const email = require('../config/email');
 
 exports.send = async (req, res) => {
+	const address = req.address;
 	try{
 		await email.sendEmail(
-			"modmasterid@gmail.com",
-			"Hello World",
+			address,
+			"Email Test",
 			"<h1>Hello from cognivus</h1>"
 		);
 
