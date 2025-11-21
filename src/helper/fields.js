@@ -19,7 +19,11 @@ exports.class = `
 	class_code,
 	description,
 	levelid,
-	lecturerid
+	lecturerid,
+	schedule_day,
+	schedule_time,
+	schedule_day_2,
+	schedule_time_2
 `;
 
 exports.student = `
@@ -104,7 +108,10 @@ exports.price = `
 	priceid,
 	levelid,
 	programid,
-	harga
+	harga,
+	monthlyprice,
+	name,
+	description
 `;
 
 exports.grade = `
