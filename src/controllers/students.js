@@ -33,8 +33,7 @@ exports.getById = async (req, res) => {
     let { data, error } = await supabase
       .from('tbstudent')
       .select(select)
-      .eq('userid', id)
-      .single();
+      .eq('userid', id);
 
     if (error) throw error;
 
