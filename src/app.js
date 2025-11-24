@@ -62,15 +62,9 @@ app.use('/email', emailRoutes, adminLimiter);
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('tblevel').select('*');
+    const { data, error } = await supabase.from('tbprogram').select('*').limit(1);
     
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: 'Supabase connection failed',
-        error: error.message
-      });
-    }
+    if (error) throw error;
     
     res.status(200).json({
       success: true,
@@ -79,7 +73,7 @@ app.get('/test-supabase', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Supabase Connection Failed',
       error: error.message
     });
   }

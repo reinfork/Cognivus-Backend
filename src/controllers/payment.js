@@ -1,10 +1,29 @@
 const snap = require('../config/midtrans.js');
 const supabase = require('../config/supabase.js');
 
+//generate midtrans token
 exports.generate = async (req, res) => {
 	try{
 		const { email, amount, name, studentid, payment_type } = req.body;
-		const orderid = "ORDER-" + Date.now();
+
+		//idempotent check
+		const { data: paymentData, error} = await supabase
+			.from('tbpayment')
+			.select()
+			.eq('studentid', studentid);
+
+		if(paymentData.length != 0 && paymentData.status === "pending"){
+			res.status(200).json({
+				success: false,
+				message: 'reuse existing pending payment',
+				redirect_url: paymentData.redirect_url,
+				token: paymentData.token,
+				order_id: orderid
+
+			})
+		}
+
+		const orderid = "LMS-" + Date.now();
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
@@ -18,8 +37,6 @@ exports.generate = async (req, res) => {
 
 		const transaction = await snap.createTransaction(parameter);
 
-		console.log(transaction);
-
 		// Create initial payment record with pending status
 		if (studentid) {
 			await supabase
@@ -28,7 +45,7 @@ exports.generate = async (req, res) => {
 					studentid: studentid,
 					midtrans_orderid: orderid,
 					amount: amount,
-					payment_type: payment_type || 'monthly',
+					payment_type: payment_type,
 					status: 'pending'
 				});
 		}
@@ -37,7 +54,7 @@ exports.generate = async (req, res) => {
 			success: true,
 			redirect_url: transaction.redirect_url,
 			token: transaction.token,
-			order_id: orderid
+			orderid
 		});
 	} catch (error) {
 		return res.status(500).json({
@@ -73,15 +90,16 @@ exports.webhook = async (req, res) => {
 			paymentStatus = 'pending';
 		}
 
-		// Update payment status in tbpayment
-		const { data: existingPayment, error: fetchError } = await supabase
+		const { data, error } = await supabase
 			.from('tbpayment')
-			.select('*')
-			.eq('midtrans_orderid', orderId);
+			.select()
+			.eq('midtrans_orderid', orderId)
+			.single();
 
-		if (existingPayment) {
-			// Update existing payment
-			await supabase
+		if (error) throw error;
+
+		if (data) {
+			const { data: updateData, error: updateError } = await supabase
 				.from('tbpayment')
 				.update({
 					status: paymentStatus,
@@ -89,15 +107,18 @@ exports.webhook = async (req, res) => {
 				})
 				.eq('midtrans_orderid', orderId);
 
-			// Log status change
-			await supabase
+			if (updateError) throw updateError;
+
+			const { data: logData, error: logError } = await supabase
 				.from('tbpayment_log')
 				.insert({
-					paymentid: existingPayment.paymentid,
-					old_status: existingPayment.status,
+					paymentid: data.paymentid,
+					old_status: data.status,
 					new_status: paymentStatus,
 					raw: notification
 				});
+
+				if (logError) throw logError;
 		}
 
 		res.status(200).json({
@@ -105,7 +126,6 @@ exports.webhook = async (req, res) => {
 			status: paymentStatus
 		});
 	} catch (error) {
-		console.error('Webhook error:', error);
 		res.status(500).json({
 			success: false,
 			message: 'Midtrans webhook error',
