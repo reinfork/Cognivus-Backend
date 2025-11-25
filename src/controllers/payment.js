@@ -1,5 +1,6 @@
 const snap = require('../config/midtrans.js');
 const supabase = require('../config/supabase.js');
+const { getStatus } = require('../helper/payment_status');
 
 //generate midtrans token
 exports.generate = async (req, res) => {
@@ -10,18 +11,18 @@ exports.generate = async (req, res) => {
 		const { data: paymentData, error} = await supabase
 			.from('tbpayment')
 			.select()
-			.eq('studentid', studentid);
+			.match({ studentid, status: 'pending'})
+			.limit(1);
 
-		if(paymentData.length != 0 && paymentData.status === "pending"){
-			res.status(200).json({
+		if (paymentData.length !== 0) {
+			return res.status(200).json({
 				success: false,
 				message: 'reuse existing pending payment',
-				redirect_url: paymentData.redirect_url,
-				token: paymentData.token,
-				order_id: orderid
-
-			})
-		}
+				redirect_url: paymentData[0].link,
+				order_id: paymentData[0].midtrans_orderid,
+				token: paymentData[0].token
+			});
+		};
 
 		const orderid = "LMS-" + Date.now();
 		const parameter = {
@@ -33,21 +34,24 @@ exports.generate = async (req, res) => {
 				first_name: name,
 				email: email
 			}
-		}
+		};
 
 		const transaction = await snap.createTransaction(parameter);
 
 		// Create initial payment record with pending status
 		if (studentid) {
-			await supabase
+			const { data: insertData, error: insertError } = await supabase
 				.from('tbpayment')
 				.insert({
 					studentid: studentid,
 					midtrans_orderid: orderid,
 					amount: amount,
 					payment_type: payment_type,
-					status: 'pending'
+					status: 'pending',
+					link: transaction.redirect_url,
+					token: transaction.token
 				});
+			if(insertError) throw insertError;
 		}
 
 		return res.status(200).json({
@@ -106,7 +110,6 @@ exports.webhook = async (req, res) => {
 					midtrans_transactionid: transactionId
 				})
 				.eq('midtrans_orderid', orderId);
-
 			if (updateError) throw updateError;
 
 			const { data: logData, error: logError } = await supabase
@@ -117,8 +120,7 @@ exports.webhook = async (req, res) => {
 					new_status: paymentStatus,
 					raw: notification
 				});
-
-				if (logError) throw logError;
+			if (logError) throw logError;
 		}
 
 		res.status(200).json({
@@ -161,7 +163,7 @@ exports.historyByID = async (req, res) => {
 	}
 };
 
-// Get payment history for a student
+// Get payment all history
 exports.history = async (req, res) => {
 	try {
 		const { studentid } = req.params;
@@ -185,4 +187,86 @@ exports.history = async (req, res) => {
 			error
 		});
 	}
+};
+
+//re-check latest midtrans status by studentID
+exports.refreshStudentID = async (req, res) => {
+	try{
+		const { studentid } = req.params;
+
+		//idempotent check
+		const { data, error} = await supabase
+			.from('tbpayment')
+			.select()
+			.match({ studentid, status: 'pending'})
+			.order('created_at', {ascending: false});
+
+		if (error) throw error;
+
+		if (Array.isArray(data) && data.length === 0) {
+			return res.status(200).json({
+				success: true,
+				message: 'no pending payments recorded'
+			});
+		};
+
+		//call midtrans endpoint to each pending row for refresh its payment status
+		for (const [index, element] of data.entries()) {
+			try{
+				const status = await getStatus(element.midtrans_orderid);
+
+				if (!status || typeof status !== 'object'){
+					throw new Error('Invalid response from Midtrans');
+				};
+
+				const transactionStatus = status.transaction_status;
+				const orderId = status.order_id;
+				const transactionId = status.transaction_id;
+
+				console.log(element.midtrans_orderid);
+				console.log(status);
+
+				if (transactionStatus === element.status){
+					return;
+				}
+
+				const { data: insertData, error: insertError } = await supabase
+					.from('tbpayment')
+					.update({
+						status: transactionStatus,
+						midtrans_transactionid: transactionId
+					})
+					.eq('midtrans_orderid', orderId);
+				if(insertError) throw insertError;
+
+				const { data: logData, error: logError } = await supabase
+					.from('tbpayment_log')
+					.insert({
+						paymentid: element.paymentid,
+						old_status: element.status,
+						new_status: transactionStatus,
+						raw: status
+					});
+				if (logError) throw logError;
+
+			} catch (error) {
+				return res.status(500).json({
+					success: false,
+					message: `error send request on orderID: ${element?.midtrans_orderid ?? index}`,
+					error: error.message
+				})
+			}
+		};
+
+		return res.status(200).json({
+			success: true,
+			message: 'status updated'
+		});
+
+	} catch(error) {
+		return res.status(500).json({
+			success: false,
+			message: 'Error refreshing payment status'
+		});
+	};
 };
