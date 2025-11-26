@@ -40,6 +40,7 @@ const courseFileRoutes = require('./routes/course_files');
 const dashboardRoutes = require('./routes/dashboard');
 const paymentRoutes = require('./routes/payment');
 const emailRoutes = require('./routes/email');
+const ancillaryPriceRoutes = require('./routes/ancillary_price');
 
 // Use routes
 app.use('/auth', authRoutes, authLimiter);
@@ -58,6 +59,7 @@ app.use('/course_files', courseFileRoutes, adminLimiter);
 app.use('/dashboard', dashboardRoutes, adminLimiter);
 app.use('/payment', paymentRoutes, adminLimiter);
 app.use('/email', emailRoutes, adminLimiter);
+app.use('/ancillary_price', ancillaryPriceRoutes, adminLimiter);
 
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {

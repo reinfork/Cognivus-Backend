@@ -147,7 +147,8 @@ exports.delete = async (req, res) => {
     const { data, error } = await supabase
       .from('tbstudent')
       .delete()
-      .eq('userid', id);
+      .eq('userid', id)
+      .select();
     
     if (error) throw error;
 

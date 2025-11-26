@@ -16,7 +16,7 @@ exports.generate = async (req, res) => {
 
 		if (paymentData.length !== 0) {
 			return res.status(200).json({
-				success: false,
+				success: true,
 				message: 'reuse existing pending payment',
 				redirect_url: paymentData[0].link,
 				order_id: paymentData[0].midtrans_orderid,
@@ -24,7 +24,7 @@ exports.generate = async (req, res) => {
 			});
 		};
 
-		const orderid = "LMS-" + Date.now();
+		const orderid = "ITTR-" + Date.now();
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
@@ -223,11 +223,12 @@ exports.refreshStudentID = async (req, res) => {
 				const orderId = status.order_id;
 				const transactionId = status.transaction_id;
 
-				console.log(element.midtrans_orderid);
-				console.log(status);
-
 				if (transactionStatus === element.status){
-					return;
+					return res.status(200).json({
+						success: true,
+						message: 'No payment status change',
+						latest_status: transactionStatus
+					});
 				}
 
 				const { data: insertData, error: insertError } = await supabase
@@ -267,6 +268,85 @@ exports.refreshStudentID = async (req, res) => {
 		return res.status(500).json({
 			success: false,
 			message: 'Error refreshing payment status'
+		});
+	};
+};
+
+//re-check latest midtrans status by OrderID
+exports.refreshOrderID = async (req, res) => {
+	try{
+		const { orderid } = req.body;
+
+		//idempotent check
+		const { data, error} = await supabase
+			.from('tbpayment')
+			.select()
+			.match({ midtrans_orderid: orderid, status: 'pending'})
+			.limit(1);
+
+		if (error) throw error;
+
+		if (Array.isArray(data) && data.length === 0) {
+			return res.status(200).json({
+				success: true,
+				message: 'no pending payments recorded'
+			});
+		};
+
+		const payment = data[0];
+
+		//call midtrans endpoint to refresh payment status
+		const status = await getStatus(payment.midtrans_orderid);
+
+		if (!status || typeof status !== 'object'){
+			throw new Error('Invalid response from Midtrans');
+		} else if (status.status_code === 404){
+			throw new Error("Transaction doesn't exist");
+		}
+
+		const transactionStatus = status.transaction_status;
+		const orderId = status.order_id;
+		const transactionId = status.transaction_id;
+
+		if (transactionStatus === payment.status){
+			return res.status(200).json({
+				success: true,
+				message: 'No payment status change',
+				latest_status: transactionStatus
+			});
+		};
+
+		//update status on tbpayment
+		const { data: insertData, error: insertError } = await supabase
+			.from('tbpayment')
+			.update({
+				status: transactionStatus,
+				midtrans_transactionid: transactionId
+			})
+			.eq('midtrans_orderid', orderId);
+		if(insertError) throw insertError;
+
+		//insert new row on tbpayment_log
+		const { data: logData, error: logError } = await supabase
+			.from('tbpayment_log')
+			.insert({
+				paymentid: payment.paymentid,
+				old_status: payment.status,
+				new_status: transactionStatus,
+				raw: status
+			});
+		if (logError) throw logError;
+
+		return res.status(200).json({
+			success: true,
+			message: 'status updated'
+		});
+
+	} catch(error) {
+		return res.status(500).json({
+			success: false,
+			message: 'Error refreshing payment status',
+			error
 		});
 	};
 };
