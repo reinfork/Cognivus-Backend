@@ -1,12 +1,12 @@
 const supabase = require('../config/supabase');
-const { level: payload } = require('../helper/payload');
-const { level: select } = require('../helper/fields');
+const { ancillary: payload } = require('../helper/payload');
+const { ancillary: select } = require('../helper/fields');
 
-//read all level data
+//read all ancillary_price data
 exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('tblevel')
+      .from('tbancillary_price')
       .select(select);
     
     if (error) throw error;
@@ -18,21 +18,21 @@ exports.getAll = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching level',
+      message: 'Error fetching ancillary_price',
       error: error.message
     });
   }
 };
 
-//get level by id
+//get ancillary_price by id
 exports.getById = async (req, res) => {
   const { id } = req.params;
 
   try {
     const { data, error } = await supabase
-      .from('tblevel')
+      .from('tbancillary_price')
       .select(select)
-      .eq('levelid', id)
+      .eq('apid', id)
       .single();
     
     if (error) throw error;
@@ -44,19 +44,19 @@ exports.getById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching level',
+      message: 'Error fetching ancillary_price',
       error: error.message
     });
   }
 };
 
-//insert new level
+//insert new ancillary_price
 exports.create = async (req, res) => {
   try {
     const insert = payload(req.body)
     
     const { data, error } = await supabase
-      .from('tblevel')
+      .from('tbancillary_price')
       .insert(insert)
       .select();
     
@@ -69,22 +69,22 @@ exports.create = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating level',
+      message: 'Error creating ancillary_price',
       error: error.message
     });
   }
 };
 
-// update level data
+// update ancillary_price data
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
     const insert = payload(req.body);
     
     const { data, error } = await supabase
-      .from('tblevel')
+      .from('tbancillary_price')
       .update(insert)
-      .eq('levelid', id)
+      .eq('apid', id)
       .select();
     
     if (error) throw error;
@@ -92,7 +92,7 @@ exports.update = async (req, res) => {
     if (!data || data.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Level not found.'
+        message: 'ancillary_price not found.'
       });
     }
     
@@ -103,40 +103,42 @@ exports.update = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating level',
+      message: 'Error updating ancillary_price',
       error: error.message
     });
   }
 };
 
-// delete level instance
+// delete ancillary_price instance
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
     
     const { data, error } = await supabase
-      .from('tblevel')
+      .from('tbancillary_price')
       .delete()
-      .eq('levelid', id)
+      .eq('apid', id)
       .select();
     
     if (error) throw error;
 
+    console.log(data);
+
     if (!data || data.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Level not found.'
+        message: 'ancillary_price not found.'
       });
     }
     
     res.json({
       success: true,
-      message: 'level deleted successfully'
+      message: 'ancillary_price deleted successfully'
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting level',
+      message: 'Error deleting ancillary_price',
       error: error.message
     });
   }

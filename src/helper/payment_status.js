@@ -8,19 +8,23 @@ const base_link = process.env.MIDTRANS_ENV === 'production' ?
 exports.getStatus = async (orderId) => {
   const serverKey = process.env.MIDTRANS_SERVER_KEY;
   const url = `${base_link}/${encodeURIComponent(orderId)}/status`;
-  const auth = Buffer.from(`${serverKey}:`).toString('base64'); // serverKey:
-  const resp = await axios.get(url, {
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Accept': 'application/json'
-    },
-    timeout: 10000
-  });
+  const auth = Buffer.from(`${serverKey}:`).toString('base64');
 
-  console.log(url);
+  try{
+    const resp = await axios.get(url, {
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept': 'application/json'
+      },
+      timeout: 10000
+    });
 
-  if (!resp || !resp.data) {
-    throw new Error('No data from Midtrans');
+    if (!resp || !resp.data)
+      throw new Error('No data from Midtrans');
+
+    return resp.data;
+  } catch(error) {
+    console.error("Midtrans GET error:", error.response?.data || error.message)
   }
 
   return resp.data;

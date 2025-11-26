@@ -132,3 +132,10 @@ exports.grade = `
 		upload_date
 		)
 `;
+
+exports.ancillary = `
+	apid,
+	name,
+	description,
+	price
+`;

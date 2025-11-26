@@ -208,3 +208,18 @@ exports.course_files = (body = {}) => {
     return payload;
   }, {});
 };
+
+exports.ancillary = (body = {}) => {
+  const allowedFields = [
+    'name',
+    'description',
+    'price'
+  ];
+
+  return allowedFields.reduce((payload, field) => {
+    if (body[field] !== undefined) {
+      payload[field] = body[field] === '' ? null : body[field];
+    }
+    return payload;
+  }, {});
+};

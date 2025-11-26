@@ -19,7 +19,11 @@ router.get('/history', controller.history);
 //get payment history for a student
 router.get('/history/:studentid', controller.historyByID);
 
-//get new status for a student
-router.get('/refresh/:studentid', controller.refreshStudentID);
+//update new status by orderId
+router.put('/refresh/', controller.refreshOrderID);
+
+//update new status for a student
+router.put('/refresh/:studentid', controller.refreshStudentID);
+
 
 module.exports = router;
