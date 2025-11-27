@@ -296,7 +296,7 @@ exports.requestOtp = async (req, res) => {
   }
 };
 
-exports.verifyOtp = (req, res) => {
+exports.verifyOtp = async (req, res) => {
   try {
     const { address, phone, channel, otp } = req.body;
 
