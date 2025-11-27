@@ -83,7 +83,8 @@ exports.user = `
 	is_active,
 	created_at,
 	updated_at,
-	deactivate_at
+	deactivate_at,
+	raw_meta_data
 `;
 
 exports.level = `
