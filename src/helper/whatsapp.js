@@ -1,51 +1,25 @@
-const {sendWhatsappMessage} = require('../config/omnichat');
+const omnichat = require('../config/omnichat');
 
-exports.grade = async (id) => {
-  try{
-    const { data, error } = await supabase
-      .from('tbstudent')
-      .select('fullname', 'phone')
-      .eq('studentid', id)
-      .single();
-
-    const message = `Hi *${data.fullname}*, your recent grade report has been uploaded. Please check your LMS dashboard.`;
-
-    // send WhatsApp message
-    await sendWhatsappMessage({
-      phone: data.phone,
-      text: message,
+exports.send = async ({ phone, text, isGroup = false }) => {
+  try {
+    const response = await axios.post(omnichat.endpoint, {
+      phone,
+      device_key: omnichat.deviceKey,  // from Omnichat
+      api_key: omnichat.apiKey,
+      method: "text",
+      text,
+      is_group: false,
     });
 
-  }catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error sends message to WhatsApp',
-      error: error.message
-    });
+    if (response.data.status) {
+      console.log("✅ WhatsApp message sent:", phone);
+    } else {
+      console.error("❌ Failed to send:", response.data);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error("Omnichat API Error:", error.response?.data || error.message);
+    throw error;
   }
-}
-
-exports.course = async (id) => {
-  try{
-    const { data, error } = await supabase
-      .from('tbstudent')
-      .select(select)
-      .eq('studentid', id)
-      .single();
-
-    const message = `Hi *${data.fullname}*, your recent class has a new material uploaded. Go check it out on your LMS dashboard.`;
-
-    // send WhatsApp message
-    await sendWhatsappMessage({
-      phone: data.phone,
-      text: message,
-    });
-
-  }catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Error sends message to WhatsApp',
-      error: error.message
-    });
-  }
-}
+};

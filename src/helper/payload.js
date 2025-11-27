@@ -49,6 +49,7 @@ exports.user = (body = {}) => {
     'roleid',
     'password',
     'is_active',
+    'raw_meta_data'
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -105,7 +106,10 @@ exports.price = (body = {}) => {
   const allowedFields = [
     'levelid',
     'programid',
-    'harga'
+    'harga',
+    'monthlyprice',
+    'name',
+    'description'
   ];
 
   return allowedFields.reduce((payload, field) => {

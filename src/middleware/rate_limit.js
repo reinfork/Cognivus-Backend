@@ -39,9 +39,16 @@ const adminLimiter = rateLimit({
   },
 });
 
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 6, // max 6 requests per window per IP
+  message: { ok: false, message: 'Too many OTP requests from this IP, please try later.' },
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
   lecturerLimiter,
-  adminLimiter
+  adminLimiter,
+  otpLimiter
 };
