@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const otputils = require('../utils/otp');
 const smtpEmail = require('../helper/email');
 const whatsapp = require('../helper/whatsapp');
-const { comparePassword, hashPassword, generateToken} = require('../utils/auth.js');
+const { comparePassword, hashPassword, generateToken, verifyToken} = require('../utils/auth.js');
 const { user: select } = require('../helper/fields');
 require('dotenv').config();
 
@@ -64,7 +64,7 @@ exports.register = async (req, res) => {
       error: error.message
     });
   }
-},
+};
 
 //user login
 exports.login = async (req, res) => {
@@ -319,10 +319,10 @@ exports.verifyOtp = async (req, res) => {
 
     } else if (phone) {
       const { data, error } = await supabase
-      .from('tbstudent')
-      .select('userid')
-      .eq('phone', phone)
-      .limit(1);
+        .from('tbstudent')
+        .select('userid')
+        .eq('phone', phone)
+        .limit(1);
 
       if(error) throw error;
 
@@ -339,7 +339,7 @@ exports.verifyOtp = async (req, res) => {
       message: 'Invalid OTP' 
     });
 
-    const choosenChannel = channel || (address ? 'email' : 'whatsapp');
+    const chosenChannel = channel || (address ? 'email' : 'whatsapp');
 
     // fetch latest unused otp for that user+channel
     const { data: otpData, error: otpError } = await supabase
@@ -362,35 +362,140 @@ exports.verifyOtp = async (req, res) => {
 
     // check expiry
     if (new Date(otpRow.expires_at) < new Date()) {
-      await supabase.from('password_otps').update({ used: true }).eq('id', otpRow.id);
-      return res.status(400).json({ ok: false, message: 'Expired OTP' });
-    }
+      const { data: checkData, error: checkError } = await supabase
+        .from('tbpassword_otp')
+        .update({ expired: true })
+        .eq('otpid', otpRow.otpid);
+
+      if (checkError) throw checkError;
+
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Expired OTP' 
+      });
+    };
 
     // check attempts
     if (otpRow.attempts >= 5) {
-      await supabase.from('password_otps').update({ used: true }).eq('id', otpRow.id);
-      return res.status(429).json({ ok: false, message: 'Too many attempts' });
-    }
+      const { data: attemptData, error: attemptError } = await supabase
+        .from('tbpassword_otp')
+        .update({ expired: true })
+        .eq('otpid', otpRow.otpid);
 
-    const isValid = await verifyOTPHash(otp, otpRow.otp_hash);
+      if (attemptError) throw attemptError;
+
+      return res.status(429).json({ 
+        success: false,
+        message: 'Too many attempts' 
+      });
+    };
+
+    //verify otp
+    const isValid = await otputils.verify(otp, otpRow.otp_hash);
+
     if (!isValid) {
-      await supabase
-        .from('password_otps')
+      const { data: invalidData, error: invalidError } = await supabase
+        .from('tbpassword_otp')
         .update({ attempts: otpRow.attempts + 1 })
-        .eq('id', otpRow.id);
-      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+        .eq('otpid', otpRow.id);
+
+      if (invalidError) throw invalidError;
+
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid OTP' 
+      });
     }
 
-    // valid -> mark used
-    await supabase.from('password_otps').update({ used: true }).eq('id', otpRow.id);
+    // valid OTP -> mark expired
+    const { data: markData, error: markError } = await supabase
+      .from('tbpassword_otp')
+      .update({ expired: true })
+      .eq('otpid', otpRow.otpid);
+
+    if (markError) throw markError;
 
     // create reset token (JWT)
-    const payload = { sub: user.id, purpose: 'password_reset' };
-    const resetToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: RESET_TOKEN_EXPIRY });
+    const payload = { sub: user.userid, purpose: 'password_reset' };
+    const resetToken = generateToken(payload);
 
-    return res.json({ ok: true, resetToken });
+    return res.status(200).json({ 
+      success: true, 
+      resetToken 
+    });
+
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ ok: false, message: 'Server error' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error',
+      err
+    });
+  }
+}
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword){ 
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token and new password required' 
+      });
+    };
+
+    let payload;
+    try {
+      payload = verifyToken(resetToken);
+    } catch (err) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired token' 
+      });
+    };
+
+    if (payload.purpose !== 'password_reset'){ 
+      return res.status(400).json({ 
+        ok: false, 
+        message: 'Invalid token purpose' 
+      });
+    }
+
+    const userid = payload.sub;
+
+    // hash new password
+    const hashed_password = await hashPassword(newPassword);
+
+    // update user password
+    const { data, error } = await supabase
+      .from('tbuser')
+      .update({ password: hashed_password })
+      .eq('userid', userid);
+
+    if (error) throw error;
+
+    // invalidate all outstanding otp rows for this user
+    const { data: updateData, error: updateError } = await supabase
+      .from('tbpassword_otp')
+      .update({ expired: true })
+      .eq('userid', userid)
+      .eq('expired', false);
+
+    if (updateError) throw updateError;
+
+    // option: rotate any active sessions or revoke refresh tokens
+
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Password updated' 
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
   }
 }
