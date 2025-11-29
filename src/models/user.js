@@ -33,7 +33,8 @@ exports.findOrCreate = async (profile) => {
       google_id: profile.id,
       email,
       roleid: 1,
-      is_active: true
+      is_active: true,
+      raw_meta_data: profile._json
     })
     .select(select)
     .single();

@@ -79,7 +79,6 @@ exports.user = `
 	username,
 	email,
 	roleid,
-	password,
 	is_active,
 	created_at,
 	updated_at,
@@ -124,6 +123,8 @@ exports.grade = `
 	reading_score,
 	writing_score,
 	final_score,
+	vocabulary_score,
+	grammar_score,
 	date_taken,
 	description,
 	tbreport_files(

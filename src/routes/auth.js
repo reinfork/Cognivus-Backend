@@ -18,6 +18,8 @@ router.post('/login', controller.login);
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', { session: false }), controller.googleCallback);
 router.post('/request-otp', controller.requestOtp);
+router.post('/verify-otp', controller.verifyOtp);
+router.post('/change-password', controller.changePassword)
 
 // Protected routes
 router.get('/profile', authenticateToken, controller.getProfile);
