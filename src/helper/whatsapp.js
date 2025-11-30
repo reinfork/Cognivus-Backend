@@ -1,14 +1,17 @@
 const omnichat = require('../config/omnichat');
+const axios = require('axios');
 
-exports.send = async ({ phone, text, isGroup = false }) => {
+exports.send = async ({ phone, otp}) => {
   try {
+    const valid = phone.replace(/^0/, "62");
+
     const response = await axios.post(omnichat.endpoint, {
-      phone,
-      device_key: omnichat.deviceKey,  // from Omnichat
+      phone: valid,
+      device_key: omnichat.deviceKey,
       api_key: omnichat.apiKey,
       method: "text",
-      text,
-      is_group: false,
+      text:`Your verification code is *${otp}*. It will expire in 10 minutes.`,
+      is_group: false
     });
 
     if (response.data.status) {
