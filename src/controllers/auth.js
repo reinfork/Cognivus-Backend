@@ -202,8 +202,8 @@ exports.requestOtp = async (req, res) => {
 
     } else if (phone) {
       const { data, error } = await supabase
-        .from('tbuser')
-        .select('userid, email, tbstudent(phone)')
+        .from('tbstudent')
+        .select('userid, phone')
         .eq('phone', phone)
         .limit(1);
 
@@ -281,8 +281,8 @@ exports.requestOtp = async (req, res) => {
         const to = user.email;
         await smtpEmail.send('otp', to, 'Password Change Request', { otp, expiresIn: 10 });
       } else {
-        const to = user.phone;
-        await whatsapp.send(to, otp);
+        const phone = user.phone;
+        await whatsapp.send({phone, otp});
       }
     } catch (sendErr) {
       console.error('otp send failed', sendErr);
