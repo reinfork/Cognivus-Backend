@@ -4,11 +4,41 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const supabase = require('./config/supabase');
 const passport = require('./config/passport');
+const { requestID } = require('./middleware/request_id');
+const pinoHttp = require('pino-http');
+const { logger } = require('./utils/logger');
 const { generalLimiter, authLimiter, lecturerLimiter, adminLimiter } = require('./middleware/rate_limit');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+//logger
+app.use(requestID);
+app.use(
+  pinoHttp({
+    logger,
+    customGenReqId: function (req) {
+      return req.id;          // use our middleware ID
+    },
+    customSuccessMessage: function (req, res) {
+      return `${req.method} ${req.url} completed`;
+    },
+    customErrorMessage: function (req, res, error) {
+      return `${req.method} ${req.url} errored`;
+    },
+    serializers: {
+      req: (req) => ({
+        id: req.id,
+        method: req.method,
+        url: req.url
+      }),
+      res: (res) => ({
+        statusCode: res.statusCode
+      })
+    }
+  })
+);
 
 app.set('trust proxy', 1);
 app.use(helmet());
