@@ -77,7 +77,7 @@ exports.login = async (req, res) => {
     //find user in database
     const { data: user, error: userError } = await supabase
       .from('tbuser')
-      .select(select)
+      .select(`${select}, password`)
       .eq('username', username)
       .single();
 
