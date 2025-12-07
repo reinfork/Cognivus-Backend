@@ -13,6 +13,9 @@ router.get('/', gradeController.getAll);
 // Create a new class
 router.post('/', multerConfig.single('file'), gradeController.create);
 
+// Download certificate for a specific grade (must be before /:id route)
+router.get('/:id/certificate', gradeController.downloadCertificate);
+
 // // Get a single class by ID
 router.get('/:id', gradeController.getById);
 
