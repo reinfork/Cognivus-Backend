@@ -200,6 +200,7 @@ exports.downloadCertificate = async (req, res) => {
     if (error) throw error;
 
     if (!data) {
+      console.error('Grade not found');
       return res.status(404).json({
         success: false,
         message: 'Grade not found'
