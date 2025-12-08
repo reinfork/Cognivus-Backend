@@ -1,6 +1,6 @@
 const supabase = require('../config/supabase');
 const { course_files: payload } = require('../helper/payload.js');
-const storage = require('../models/reports');
+const reports = require('../models/reports');
 const bucket = 'courses';
 
 //get all reports
@@ -52,3 +52,38 @@ exports.getById = async (req, res) => {
   }
 };
 
+// delete course file
+exports.delete = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { data, error } = await supabase
+      .from('tbcourse_files')
+      .delete()
+      .eq('cfid', id)
+      .select();
+    
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Course file not found.'
+      });
+    }
+
+    await reports.delete(data, bucket);
+
+    res.status(200).json({
+      success: true,
+      message: 'course file deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting course file',
+      error: error.message
+    });
+  }
+};

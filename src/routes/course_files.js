@@ -12,4 +12,6 @@ router.get('/', courseFile.getAll);
 // // Get a single class by ID
 router.get('/:id', courseFile.getById);
 
+router.delete('/:id', courseFile.delete);
+
 module.exports = router;
