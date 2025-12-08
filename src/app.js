@@ -73,23 +73,23 @@ const emailRoutes = require('./routes/email');
 const ancillaryPriceRoutes = require('./routes/ancillary_price');
 
 // Use routes
-app.use('/auth', authRoutes, authLimiter);
-app.use('/students', studentRoutes, generalLimiter);
-app.use('/lecturers', lecturerRoutes, lecturerLimiter);
-app.use('/users', userRoutes, adminLimiter);
-app.use('/courses', courseRoutes, generalLimiter);
-app.use('/classes', classRoutes, adminLimiter);
-app.use('/levels', levelsRoutes, adminLimiter);
-app.use('/teacher_levels', teacher_levelRoutes, adminLimiter);
-app.use('/programs', programRoutes, adminLimiter);
-app.use('/prices', priceRoutes, adminLimiter);
-app.use('/grades', gradeRoutes, adminLimiter);
-app.use('/report_files', reportFileRoutes, adminLimiter);
-app.use('/course_files', courseFileRoutes, adminLimiter);
-app.use('/dashboard', dashboardRoutes, adminLimiter);
-app.use('/payment', paymentRoutes, adminLimiter);
-app.use('/email', emailRoutes, adminLimiter);
-app.use('/ancillary_price', ancillaryPriceRoutes, adminLimiter);
+app.use('/api/auth', authRoutes, authLimiter);
+app.use('/api/students', studentRoutes, generalLimiter);
+app.use('/api/lecturers', lecturerRoutes, lecturerLimiter);
+app.use('/api/users', userRoutes, adminLimiter);
+app.use('/api/courses', courseRoutes, generalLimiter);
+app.use('/api/classes', classRoutes, adminLimiter);
+app.use('/api/levels', levelsRoutes, adminLimiter);
+app.use('/api/teacher_levels', teacher_levelRoutes, adminLimiter);
+app.use('/api/programs', programRoutes, adminLimiter);
+app.use('/api/prices', priceRoutes, adminLimiter);
+app.use('/api/grades', gradeRoutes, adminLimiter);
+app.use('/api/report_files', reportFileRoutes, adminLimiter);
+app.use('/api/course_files', courseFileRoutes, adminLimiter);
+app.use('/api/dashboard', dashboardRoutes, adminLimiter);
+app.use('/api/payment', paymentRoutes, adminLimiter);
+app.use('/api/email', emailRoutes, adminLimiter);
+app.use('/api/ancillary_price', ancillaryPriceRoutes, adminLimiter);
 
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {
