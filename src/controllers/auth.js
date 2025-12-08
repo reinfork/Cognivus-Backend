@@ -68,6 +68,7 @@ exports.register = async (req, res) => {
 
 //user login
 exports.login = async (req, res) => {
+  logger.info({ reqId: req.id, user: req.body.email }, "Login attempt");
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -98,6 +99,7 @@ exports.login = async (req, res) => {
     const token = generateToken(payload);
 
     // send response
+    logger.info({ reqId: req.id, user.userid }, "Login succeed");
     res.status(200).json({
       success: true,
       message: 'Login berhasil',
@@ -111,8 +113,11 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('server error:', error);
-    res.status(500).json({ success: false, message: 'Invalid username/Server error' });
+    logger.error({ reqId: req.id, user.userid, error }, "Login failed");
+    res.status(500).json({ 
+      success: false, 
+      message: 'Invalid username/Server error' 
+    });
   }
 },
 
