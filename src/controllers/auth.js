@@ -4,7 +4,6 @@ const bcrypt = require('bcryptjs');
 const otputils = require('../utils/otp');
 const smtpEmail = require('../helper/email');
 const whatsapp = require('../helper/whatsapp');
-const { logger } = require('../utils/logger');
 const { comparePassword, hashPassword, generateToken, verifyToken} = require('../utils/auth.js');
 const { user: select } = require('../helper/fields');
 require('dotenv').config();
@@ -67,9 +66,9 @@ exports.register = async (req, res) => {
   }
 };
 
-//user logingit 
+//user login
 exports.login = async (req, res) => {
-  logger.info({ reqId: req.id, user: req.body.email }, "Login attempt");
+  req.log.info({ reqId: req.id, user: req.body.email }, "Login attempt");
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -100,7 +99,7 @@ exports.login = async (req, res) => {
     const token = generateToken(payload);
 
     // send response
-    logger.info({ reqId: req.id, userid: user.userid }, "Login succeed");
+    req.log.info({ reqId: req.id, userid: user.userid }, "Login succeed");
     res.status(200).json({
       success: true,
       message: 'Login berhasil',
@@ -114,7 +113,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error({ reqId: req.id, userid: user.userid, error }, "Login failed");
+    req.log.error({ reqId: req.id, userid: user.userid, error }, "Login failed");
     res.status(500).json({ 
       success: false, 
       message: 'Invalid username/Server error' 
