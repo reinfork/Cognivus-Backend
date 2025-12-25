@@ -83,7 +83,8 @@ exports.user = `
 	created_at,
 	updated_at,
 	deactivate_at,
-	raw_meta_data
+	raw_meta_data,
+	password
 `;
 
 exports.level = `
@@ -127,11 +128,9 @@ exports.grade = `
 	grammar_score,
 	date_taken,
 	description,
-	tbreport_files(
-		rfid,
-		path,
-		url,
-		upload_date
+	tbstudent(
+		fullname,
+		studentid
 		)
 `;
 

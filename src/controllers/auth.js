@@ -128,7 +128,7 @@ exports.getProfile = async (req, res) => {
     // Get user profile from database
     const { data, error } = await supabase
       .from('tbuser')
-      .select(select)
+      .select(`${select}, password`)
       .eq('userid', id)
       .single();
     
@@ -176,7 +176,6 @@ exports.googleCallback = (req, res) => {
   const payload = { id: user.userid, username: user.username, role };
   const token = generateToken(payload);
 
-  // Extract avatar URL from raw_meta_data if available
   const avatarUrl = user.raw_meta_data?.picture || '';
   const givenName = user.raw_meta_data?.given_name || '';
   const familyName = user.raw_meta_data?.family_name || '';

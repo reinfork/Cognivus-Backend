@@ -73,18 +73,17 @@ exports.create = async (req, res) => {
       .select();
 
     if(error) throw error;
-    let uploaded = []
+    // let uploaded = []
 
-    //upload files
-    if(file) {
-      results = await reports.create(data[0], file, bucket);
-      uploaded.push(results);
-    };
+    // //upload files
+    // if(file) {
+    //   results = await reports.create(data[0], file, bucket);
+    //   uploaded.push(results);
+    // };
 
     return res.status(201).json({
       success: true,
-      data,
-      uploaded
+      data
     });
 
   } catch (error) {
@@ -112,18 +111,17 @@ exports.update = async (req, res) => {
       .select();
 
     if (error) throw error;
-    let uploaded = [];
+    // let uploaded = [];
 
-    //find or upload
-    if (file) {
-      const results = await reports.createOrReplace(data[0], file, bucket);
-      uploaded.push(results);
-    };
+    // //find or upload
+    // if (file) {
+    //   const results = await reports.createOrReplace(data[0], file, bucket);
+    //   uploaded.push(results);
+    // };
 
     return res.status(201).json({
       success: true,
-      data,
-      uploaded
+      data
     });
   } catch (error) {
     return res.status(500).json({
@@ -154,10 +152,10 @@ exports.delete = async (req, res) => {
       });
     }
 
-    const file = data[0].tbreport_files;
+    // const file = data[0].tbreport_files;
 
-    //remove files from bucket
-    if(file) await reports.delete(file[0], bucket);
+    // //remove files from bucket
+    // if(file) await reports.delete(file[0], bucket);
 
     return res.status(200).json({
       success: true,
@@ -181,19 +179,7 @@ exports.downloadCertificate = async (req, res) => {
     // Fetch grade data with student information
     const { data, error } = await supabase
       .from('tbgrade')
-      .select(`
-        gradeid,
-        test_type,
-        listening_score,
-        speaking_score,
-        reading_score,
-        writing_score,
-        final_score,
-        date_taken,
-        tbstudent!inner(
-          fullname
-        )
-      `)
+      .select(select)
       .eq('gradeid', id)
       .single();
 
@@ -300,7 +286,9 @@ exports.downloadCertificate = async (req, res) => {
       { label: 'Listening', score: data.listening_score },
       { label: 'Speaking', score: data.speaking_score },
       { label: 'Reading', score: data.reading_score },
-      { label: 'Writing', score: data.writing_score }
+      { label: 'Writing', score: data.writing_score },
+      { label: 'Grammar', score: data.grammar_score },
+      { label: 'Vocabulary', score: data.vocabulary_score }
     ].filter(item => item.score !== null && item.score !== undefined);
 
     if (scoreLabels.length > 0) {
