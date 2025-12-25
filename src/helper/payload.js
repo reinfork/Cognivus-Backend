@@ -167,6 +167,8 @@ exports.grade = (body = {}) => {
     'listening_score',
     'reading_score',
     'writing_score',
+    'grammar_score',
+    'vocabulary_score',
     'final_score',
     'description',
     'date_taken',
