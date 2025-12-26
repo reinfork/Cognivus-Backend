@@ -84,7 +84,8 @@ exports.user = `
 	updated_at,
 	deactivate_at,
 	raw_meta_data,
-	password
+	password,
+	google_id
 `;
 
 exports.level = `

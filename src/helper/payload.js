@@ -49,7 +49,8 @@ exports.user = (body = {}) => {
     'roleid',
     'password',
     'is_active',
-    'raw_meta_data'
+    'raw_meta_data',
+    'google_id'
   ];
 
   return allowedFields.reduce((payload, field) => {
