@@ -148,7 +148,8 @@ exports.class = (body = {}) => {
     'schedule_time',
     'schedule_day',
     'schedule_time_2',
-    'schedule_day_2'
+    'schedule_day_2',
+    'branch'
   ];
 
   return allowedFields.reduce((payload, field) => {

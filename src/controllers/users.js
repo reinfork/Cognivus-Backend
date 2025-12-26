@@ -66,7 +66,10 @@ exports.create = async (req, res) => {
       .insert(insert)
       .select();
     
-    if (error) throw error;
+    if (error){ 
+      if(error.code === '23505') error.message = "Username already exist";
+      throw error;
+    };
     
     res.status(201).json({
       success: true,
@@ -75,8 +78,7 @@ exports.create = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating user',
-      error: error.message
+      message: error.message
     });
   }
 };

@@ -23,7 +23,8 @@ exports.class = `
 	schedule_day,
 	schedule_time,
 	schedule_day_2,
-	schedule_time_2
+	schedule_time_2,
+	branch
 `;
 
 exports.student = `
