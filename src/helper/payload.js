@@ -10,7 +10,16 @@ exports.student = (body = {}) => {
     'birthdate',
     'birthplace',
     'classid',
-    'photo'
+    'photo',
+    'relationship',
+    'occupation',
+    'program_interest',
+    'english_level',
+    'referral_source',
+    'learning_mode',
+    'preferred_time',
+    'studied_before',
+    'learning_reason'
   ];
 
   return allowedFields.reduce((payload, field) => {
