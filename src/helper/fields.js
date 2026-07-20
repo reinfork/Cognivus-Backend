@@ -24,7 +24,8 @@ exports.class = `
 	schedule_time,
 	schedule_day_2,
 	schedule_time_2,
-	branch
+	branch,
+	is_default
 `;
 
 exports.student = `

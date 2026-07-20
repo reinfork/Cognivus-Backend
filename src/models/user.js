@@ -26,6 +26,18 @@ exports.findOrCreate = async (profile) => {
     username = `${username}${Math.floor(Math.random() * 10000)}`;
   }
 
+  // resolve default class before creating the user, so a missing default
+  // never leaves a tbuser row without its tbstudent row
+  const { data: defaultClass, error: defaultClassError } = await supabase
+    .from('tbclass')
+    .select('classid')
+    .eq('is_default', true)
+    .single();
+
+  if (defaultClassError || !defaultClass) {
+    throw new Error('No default class is configured for new Google sign-ups. Set one in Manage Classes.');
+  }
+
   const { data: newUser, error: userError } = await supabase
     .from('tbuser')
     .insert({
@@ -46,7 +58,7 @@ exports.findOrCreate = async (profile) => {
     .insert({
       userid: newUser.userid,
       fullname: displayName,
-      classid: 4
+      classid: defaultClass.classid
     });
 
   if (studentError) throw studentError;
