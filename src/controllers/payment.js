@@ -1,6 +1,7 @@
 const snap = require('../config/midtrans.js');
 const supabase = require('../config/supabase.js');
 const { getStatus } = require('../helper/payment_status');
+const { normalize } = require('../services/normalizePaymentStatus.js')
 
 //generate midtrans token
 exports.generate = async (req, res) => {
@@ -38,7 +39,6 @@ exports.generate = async (req, res) => {
 
 		const transaction = await snap.createTransaction(parameter);
 
-		// Create initial payment record with pending status
 		if (studentid) {
 			const { data: insertData, error: insertError } = await supabase
 				.from('tbpayment')
@@ -74,25 +74,12 @@ exports.webhook = async (req, res) => {
 		const notification = req.body;
 		
 		const transactionStatus = notification.transaction_status;
-		const fraudStatus = notification.fraud_status;
 		const orderId = notification.order_id;
 		const transactionId = notification.transaction_id;
 		const paymentType = notification.payment_type;
 		const grossAmount = notification.gross_amount;
 
-		let paymentStatus = 'pending';
-		
-		if (transactionStatus === 'capture') {
-			if (fraudStatus === 'accept') {
-				paymentStatus = 'success';
-			}
-		} else if (transactionStatus === 'settlement') {
-			paymentStatus = 'success';
-		} else if (transactionStatus === 'cancel' || transactionStatus === 'deny' || transactionStatus === 'expire') {
-			paymentStatus = 'failed';
-		} else if (transactionStatus === 'pending') {
-			paymentStatus = 'pending';
-		}
+		let paymentStatus = normalize(transactionStatus)
 
 		const { data, error } = await supabase
 			.from('tbpayment')
@@ -219,9 +206,11 @@ exports.refreshStudentID = async (req, res) => {
 					throw new Error('Invalid response from Midtrans');
 				};
 
-				const transactionStatus = status.transaction_status;
+				const tempStatus = status.transaction_status;
 				const orderId = status.order_id;
 				const transactionId = status.transaction_id;
+
+				const transactionStatus = normalize(tempStatus)
 
 				if (transactionStatus === element.status){
 					return res.status(200).json({
@@ -304,9 +293,11 @@ exports.refreshOrderID = async (req, res) => {
 			throw new Error("Transaction doesn't exist");
 		}
 
-		const transactionStatus = status.transaction_status;
+		const tempStatus = status.transaction_status;
 		const orderId = status.order_id;
 		const transactionId = status.transaction_id;
+
+		const transactionStatus = normalize(tempStatus)
 
 		if (transactionStatus === payment.status){
 			return res.status(200).json({
