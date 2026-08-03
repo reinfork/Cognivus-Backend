@@ -11,7 +11,8 @@ router.post('/webhook', middleware.verify, controller.webhook);
 router.use(authenticateToken);
 
 //generate midtrans token and payment
-router.post('/generate', controller.generate);
+router.post('/generate/tuition', controller.generateTuition);
+router.post('/generate/ancillary', controller.generateAncillary)
 
 //get all payment history
 router.get('/history', controller.history);

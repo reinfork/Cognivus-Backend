@@ -3,10 +3,10 @@ const supabase = require('../config/supabase.js');
 const { getStatus } = require('../helper/payment_status');
 const { normalize } = require('../services/normalizePaymentStatus.js')
 
-//generate midtrans token
-exports.generate = async (req, res) => {
+
+exports.generateTuition = async (req, res) => {
 	try{
-		const { email, amount, name, studentid, payment_type } = req.body;
+		const { email, amount, name, studentid, payment_type, type } = req.body;
 
 		//idempotent check
 		const { data: paymentData, error} = await supabase
@@ -25,11 +25,46 @@ exports.generate = async (req, res) => {
 			});
 		};
 
-		const orderid = "ITTR-" + Date.now();
+		//Valid Tuition Amount
+		const { data: classData, error: classError } = await supabase
+			.from('tbstudent')
+			.select(`tbclass(programid, levelid)`)
+			.eq('studentid', studentid)
+			.single()
+
+		if (classError) throw classError;
+
+		let price;
+
+		if (type === 1) {
+			price = 'harga'
+		} else if (type === 2) {
+			price = 'monthlyprice'
+		} else {
+			return res.status(404).json({
+				success: false,
+				message: "unkown type of fee"
+			})
+		}
+
+		const { data: priceData, error: priceError } = await supabase
+			.from('tbprice')
+			.select(price)
+			.eq('programid', classData.tbclass.programid)
+			.eq('levelid', classData.tbclass.levelid)
+			.single()
+
+		if (priceError) throw new Error("price not found")
+
+		if (amount !== priceData.harga) {
+		    logger.warn("Client sent manipulated amount.");
+		}
+
+		const orderid = "ITTR-LMS" + Date.now();
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
-				gross_amount: amount
+				gross_amount: priceData.harga
 			},
 			customer_details: {
 				first_name: name,
@@ -45,7 +80,94 @@ exports.generate = async (req, res) => {
 				.insert({
 					studentid: studentid,
 					midtrans_orderid: orderid,
-					amount: amount,
+					amount: priceData.harga,
+					payment_type: payment_type,
+					status: 'pending',
+					link: transaction.redirect_url,
+					token: transaction.token
+				});
+			if(insertError) throw insertError;
+		}
+
+		return res.status(200).json({
+			success: true,
+			redirect_url: transaction.redirect_url,
+			token: transaction.token,
+			orderid
+		});
+	} catch (error) {
+		return res.status(500).json({
+			success: false,
+			message: 'Error generate new midtrans token',
+			error
+		})
+	}
+};
+
+exports.generateAncillary = async (req, res) => {
+	try{
+		const { email, amount, name, studentid, payment_type, type } = req.body;
+
+		//idempotent check
+		const { data: paymentData, error} = await supabase
+			.from('tbpayment')
+			.select()
+			.match({ studentid, status: 'pending'})
+			.limit(1);
+
+		if (paymentData.length !== 0) {
+			return res.status(200).json({
+				success: true,
+				message: 'reuse existing pending payment',
+				redirect_url: paymentData[0].link,
+				order_id: paymentData[0].midtrans_orderid,
+				token: paymentData[0].token
+			});
+		};
+
+		let price;
+
+		if (type === 1) {
+			id = 1
+		} else if (type === 2) {
+			id = 6;
+		} else {
+			return res.status(404).json({
+				success: false,
+				message: "unkown type of fee"
+			})
+		}
+
+		//Valid Ancillary Amount
+		const { data: ancilData, error: ancilError } = await supabase
+			.from('tbancillary_price')
+			.select()
+			.eq('studentid', studentid)
+			.single()
+
+		if (ancilError) throw ancilError;
+
+		const orderid = "ITTR-LMS" + Date.now();
+		const parameter = {
+			transaction_details: {
+				order_id: orderid,
+				gross_amount: priceData.harga
+			},
+			customer_details: {
+				first_name: name,
+				email: email
+			}
+		};
+
+		const transaction = await snap.createTransaction(parameter);
+
+		if (studentid) {
+			const { data: insertData, error: insertError } = await supabase
+				.from('tbpayment')
+				.insert({
+					studentid: studentid,
+					midtrans_orderid: orderid,
+					amount: priceData.harga,
 					payment_type: payment_type,
 					status: 'pending',
 					link: transaction.redirect_url,
