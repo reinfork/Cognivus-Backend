@@ -59,7 +59,8 @@ exports.user = (body = {}) => {
     'password',
     'is_active',
     'raw_meta_data',
-    'google_id'
+    'google_id',
+    'deactivate_at'
   ];
 
   return allowedFields.reduce((payload, field) => {
@@ -158,7 +159,8 @@ exports.class = (body = {}) => {
     'schedule_day',
     'schedule_time_2',
     'schedule_day_2',
-    'branch'
+    'branch',
+    'is_default'
   ];
 
   return allowedFields.reduce((payload, field) => {

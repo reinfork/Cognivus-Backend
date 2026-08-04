@@ -100,13 +100,23 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const insert = payload(req.body);
 
+    // only one class may be the default target for new Google sign-ups
+    if (insert.is_default === true) {
+      const { error: unsetError } = await supabase
+        .from('tbclass')
+        .update({ is_default: false })
+        .eq('is_default', true)
+        .neq('classid', id);
+
+      if (unsetError) throw unsetError;
+    }
+
     // update class
     const { data, error } = await supabase
       .from('tbclass')
       .update(insert)
       .eq('classid', id)
-      .select()
-      .single();
+      .select();
 
     if (error) throw error;
 
@@ -135,6 +145,19 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // deleting the default class would break new Google sign-ups
+    const { data: target } = await supabase
+      .from('tbclass')
+      .select('is_default')
+      .eq('classid', id);
+
+    if (target?.[0]?.is_default) {
+      return res.status(400).json({
+        success: false,
+        message: 'This class is the default for new Google sign-ups. Set another class as default before deleting it.'
+      });
+    }
 
     const { data, error } = await supabase
       .from('tbclass')

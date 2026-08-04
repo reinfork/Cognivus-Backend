@@ -19,12 +19,14 @@ exports.class = `
 	class_code,
 	description,
 	levelid,
+	programid,
 	lecturerid,
 	schedule_day,
 	schedule_time,
 	schedule_day_2,
 	schedule_time_2,
-	branch
+	branch,
+	is_default
 `;
 
 exports.student = `
@@ -53,7 +55,8 @@ exports.student = `
 	tbuser!inner(
 	  userid,
 	  username,
-	  email
+	  email,
+	  deactivate_at
 	  )
 `;
 
