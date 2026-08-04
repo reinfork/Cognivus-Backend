@@ -4,7 +4,7 @@ const { getStatus } = require('../helper/payment_status');
 const { normalize } = require('../services/normalizePaymentStatus.js')
 
 
-exports.generateTuition = async (req, res) => {
+exports.generateTuition   = async (req, res) => {
 	try{
 		const { email, amount, name, studentid, payment_type, type } = req.body;
 
@@ -56,15 +56,17 @@ exports.generateTuition = async (req, res) => {
 
 		if (priceError) throw new Error("price not found")
 
-		if (amount !== priceData.harga) {
-		    logger.warn("Client sent manipulated amount.");
+		let grossAmount = type === 1 ? priceData.harga : priceData.monthlyprice;
+
+		if (amount !== grossAmount) {
+		    req.log.warn({ reqId: req.id, user: req.body.email }, "User manipulating amount");
 		}
 
 		const orderid = "ITTR-LMS" + Date.now();
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
-				gross_amount: priceData.harga
+				gross_amount: grossAmount
 			},
 			customer_details: {
 				first_name: name,
@@ -80,7 +82,7 @@ exports.generateTuition = async (req, res) => {
 				.insert({
 					studentid: studentid,
 					midtrans_orderid: orderid,
-					amount: priceData.harga,
+					amount: grossAmount,
 					payment_type: payment_type,
 					status: 'pending',
 					link: transaction.redirect_url,
@@ -142,16 +144,20 @@ exports.generateAncillary = async (req, res) => {
 		const { data: ancilData, error: ancilError } = await supabase
 			.from('tbancillary_price')
 			.select()
-			.eq('studentid', studentid)
+			.eq('id', id)
 			.single()
 
 		if (ancilError) throw ancilError;
+
+		if (amount !== ancilData.price) {
+		    req.log.warn({ reqId: req.id, user: req.body.email }, "User manipulating amount");
+		}
 
 		const orderid = "ITTR-LMS" + Date.now();
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
-				gross_amount: priceData.harga
+				gross_amount: ancilData.price
 			},
 			customer_details: {
 				first_name: name,
@@ -167,7 +173,7 @@ exports.generateAncillary = async (req, res) => {
 				.insert({
 					studentid: studentid,
 					midtrans_orderid: orderid,
-					amount: priceData.harga,
+					amount: ancilData.price,
 					payment_type: payment_type,
 					status: 'pending',
 					link: transaction.redirect_url,
