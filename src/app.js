@@ -91,7 +91,9 @@ app.use('/dashboard', dashboardRoutes, adminLimiter);
 app.use('/payment', paymentRoutes, adminLimiter);
 app.use('/email', emailRoutes, adminLimiter);
 app.use('/ancillary_price', ancillaryPriceRoutes, adminLimiter);
-app.use('/popup', popupRoutes, adminLimiter);
+// limiter goes before the router so it actually runs; students hit
+// GET /popup/active on every dashboard mount, so use the general budget
+app.use('/popup', generalLimiter, popupRoutes);
 
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {

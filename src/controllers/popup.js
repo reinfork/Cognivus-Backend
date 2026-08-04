@@ -1,7 +1,39 @@
 const supabase = require('../config/supabase');
 const storage = require('../middleware/storage');
+const { daysLeft } = require('../helper/validity');
 
 const bucket = 'popups';
+
+// Show the expiry reminder once the class period is this close to ending
+const REMINDER_DAYS = 30;
+
+// Only these roles may manage the announcement image
+const ADMIN_ROLES = ['admin', 'owner', 'moderator', 'developer'];
+
+const isAdmin = (req) => ADMIN_ROLES.includes(req.user?.role);
+
+// the student's own class validity, when it is close enough to warn about
+const fetchExpiry = async (req) => {
+  if (req.user?.role !== 'student') return null;
+
+  const { data: user, error } = await supabase
+    .from('tbuser')
+    .select('deactivate_at')
+    .eq('userid', req.user.id)
+    .single();
+
+  if (error) throw error;
+  if (!user?.deactivate_at) return null;
+
+  const remaining = daysLeft(user.deactivate_at);
+  if (remaining > REMINDER_DAYS) return null;
+
+  return {
+    type: 'expiry',
+    deactivate_at: user.deactivate_at,
+    days_left: remaining
+  };
+};
 
 const buildPayload = (body = {}) => {
   const payload = {};
@@ -20,10 +52,17 @@ const fetchRow = async (activeOnly = false) => {
   return data?.[0] ?? null;
 };
 
-// active popup for students
+// what a student should see on entering the dashboard: their own class expiry
+// reminder takes priority, otherwise the global announcement image
 exports.getActive = async (req, res) => {
   try {
-    return res.json({ success: true, data: await fetchRow(true) });
+    const expiry = await fetchExpiry(req);
+    if (expiry) return res.json({ success: true, data: expiry });
+
+    const image = await fetchRow(true);
+    if (!image) return res.json({ success: true, data: null });
+
+    return res.json({ success: true, data: { ...image, type: 'image' } });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -49,6 +88,10 @@ exports.get = async (req, res) => {
 // create or replace popup (upload deletes previous image)
 exports.upsert = async (req, res) => {
   try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+
     const row = await fetchRow();
     const payload = buildPayload(req.body);
     const now = new Date().toISOString();
@@ -102,6 +145,10 @@ exports.upsert = async (req, res) => {
 // delete popup and its image
 exports.remove = async (req, res) => {
   try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+
     const row = await fetchRow();
     if (!row) {
       return res.status(404).json({ success: false, message: 'Popup not found' });
