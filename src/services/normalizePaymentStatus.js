@@ -11,6 +11,8 @@ exports.normalize = (transactionStatus) => {
 		paymentStatus = 'pending';
 	} else if (transactionStatus === 'expire' || transactionStatus === 'expired') {
 		paymentStatus = 'expired';
+	} else {
+		paymentStatus = transactionStatus;
 	}
 
 	return paymentStatus;
