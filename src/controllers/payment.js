@@ -110,14 +110,16 @@ exports.generateTuition   = async (req, res) => {
 
 exports.generateAncillary = async (req, res) => {
 	try{
-		const { email, amount, name, studentid, payment_type, type } = req.body;
+		const { email, amount, name, studentid, payment_type, apid } = req.body;
 
 		//idempotent check
-		const { data: paymentData, error} = await supabase
+		const { data: paymentData, error: paymentError} = await supabase
 			.from('tbpayment')
 			.select()
 			.match({ studentid, status: 'pending'})
 			.limit(1);
+
+		if (paymentError) throw paymentError
 
 		if (paymentData.length !== 0) {
 			return res.status(200).json({
@@ -129,24 +131,11 @@ exports.generateAncillary = async (req, res) => {
 			});
 		};
 
-		let id;
-
-		if (type === 1) {
-			id = 1
-		} else if (type === 2) {
-			id = 6;
-		} else {
-			return res.status(404).json({
-				success: false,
-				message: "unkown type of fee"
-			})
-		}
-
 		//Valid Ancillary Amount
 		const { data: ancilData, error: ancilError } = await supabase
 			.from('tbancillary_price')
 			.select()
-			.eq('apid', id)
+			.eq('apid', apid)
 			.single()
 
 		if (ancilError) throw ancilError;
@@ -370,11 +359,7 @@ exports.refreshStudentID = async (req, res) => {
 				if (logError) throw logError;
 
 			} catch (error) {
-				return res.status(500).json({
-					success: false,
-					message: `error send request on orderID: ${element?.midtrans_orderid ?? index}`,
-					error: error.message
-				})
+				throw new Error(`error send request on orderID: ${element?.midtrans_orderid ?? index}`)
 				continue;
 			}
 		};
@@ -387,7 +372,8 @@ exports.refreshStudentID = async (req, res) => {
 	} catch(error) {
 		return res.status(500).json({
 			success: false,
-			message: 'Error refreshing payment status'
+			message: 'Error refreshing payment status',
+			error: error.message
 		});
 	};
 };
