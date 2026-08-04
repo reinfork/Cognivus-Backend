@@ -142,9 +142,13 @@ exports.grade = `
 	grammar_score,
 	date_taken,
 	description,
+	level,
+	referencenumber,
 	tbstudent(
 		fullname,
-		studentid
+		studentid,
+		birthdate,
+		classid
 		)
 `;
 

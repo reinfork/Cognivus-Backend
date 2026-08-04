@@ -110,7 +110,7 @@ exports.update = async (req, res) => {
       .eq('gradeid', id)
       .select();
 
-    if (error) throw error;
+    if (error) throw error; 
     // let uploaded = [];
 
     // //find or upload
@@ -174,7 +174,7 @@ exports.delete = async (req, res) => {
 // Download certificate for a specific grade
 exports.downloadCertificate = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; 
 
     // Fetch grade data with student information
     const { data, error } = await supabase
@@ -183,42 +183,27 @@ exports.downloadCertificate = async (req, res) => {
       .eq('gradeid', id)
       .single();
 
-    if (error) throw error;
+    if (error || !data) throw error;
 
-    if (!data) {
-      console.error('Grade not found');
-      return res.status(404).json({
-        success: false,
-        message: 'Grade not found'
-      });
-    }
-
-    // Create PDF document in landscape A4
     const doc = new PDFDocument({
       layout: 'landscape',
       size: 'A4',
       margins: { top: 50, bottom: 50, left: 72, right: 72 }
     });
 
-    // Set response headers for file download
-    const fileName = `Certificate_${data.test_type || 'Test'}_${data.tbstudent.fullname.replace(/\s+/g, '_')}.pdf`;
+    const fileName = `Certificate_${data.test_type || 'Test'}.pdf`;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-    // Pipe PDF to response
     doc.pipe(res);
 
-    // Check if certificate template exists
-    const templatePath = path.join(__dirname, '../assets/certificate_template.png');
+    const templatePath = path.join(__dirname, '../assets/advanced.jpg');
     if (fs.existsSync(templatePath)) {
-      // If template exists, use it as background
       doc.image(templatePath, 0, 0, {
         width: 842,
         height: 595
       });
     } else {
-      // Otherwise, create a simple certificate design
-      // Background
       doc.rect(0, 0, 842, 595).fill('#f8f9fa');
       
       // Border
@@ -234,7 +219,15 @@ exports.downloadCertificate = async (req, res) => {
     }
 
     // Text overlay
+    const referencenumber = data.referencenumber;
     const studentName = data.tbstudent.fullname;
+    const birthdate = data.tbstudent.birthdate
+      ? new Date(data.tbstudent.birthdate).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      : 'N/A';
     const testType = data.test_type || 'English Proficiency Test';
     const dateTaken = data.date_taken 
       ? new Date(data.date_taken).toLocaleDateString('en-US', { 
@@ -244,39 +237,31 @@ exports.downloadCertificate = async (req, res) => {
         })
       : 'N/A';
 
-    // Certificate title
-    doc.fontSize(36)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('CERTIFICATE OF ACHIEVEMENT', 0, 100, {
-         align: 'center',
-         width: 842
+    //reference number
+    doc.fontSize(13)
+       .font('Helvetica')
+       .fillColor('#00000')
+       .text(referencenumber, 90, 16, {
+         align: 'left',
+         width: 200
        });
 
-    // Subtitle
-    doc.fontSize(16)
-       .font('Helvetica')
-       .fillColor('#7f8c8d')
-       .text('This is to certify that', 0, 160, {
-         align: 'center',
-         width: 842
-       });
 
     // Student name
     doc.fontSize(32)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
-       .text(studentName, 0, 200, {
-         align: 'center',
+       .text(studentName, 73, 270, {
+         align: 'left',
          width: 842
        });
 
-    // Test type
-    doc.fontSize(16)
+    // Birthdate
+    doc.fontSize(13)
        .font('Helvetica')
-       .fillColor('#7f8c8d')
-       .text(`has successfully completed the ${testType}`, 0, 250, {
-         align: 'center',
+       .fillColor('#00000')
+       .text(birthdate, 130, 316, {
+         align: 'left',
          width: 842
        });
 
@@ -288,70 +273,27 @@ exports.downloadCertificate = async (req, res) => {
       { label: 'Reading', score: data.reading_score },
       { label: 'Writing', score: data.writing_score },
       { label: 'Grammar', score: data.grammar_score },
-      { label: 'Vocabulary', score: data.vocabulary_score }
+      { label: 'Vocabulary', score: data.vocabulary_score },
+      { label: 'average', score: data.final_score}
     ].filter(item => item.score !== null && item.score !== undefined);
 
     if (scoreLabels.length > 0) {
-      doc.fontSize(14)
-         .font('Helvetica-Bold')
-         .fillColor('#2c3e50')
-         .text('Test Scores:', 0, scoresY, {
-           align: 'center',
-           width: 842
-         });
 
-      const scoreWidth = 150;
-      const totalWidth = scoreLabels.length * scoreWidth;
-      const startX = (842 - totalWidth) / 2;
+      const scoreSpace = 20;
+      const startY = 395;
 
       scoreLabels.forEach((item, index) => {
-        const x = startX + (index * scoreWidth);
+        const y = startY + (index * scoreSpace);
         
-        doc.fontSize(12)
-           .font('Helvetica')
-           .fillColor('#7f8c8d')
-           .text(item.label, x, scoresY + 30, {
-             width: scoreWidth,
-             align: 'center'
-           });
-        
-        doc.fontSize(18)
+        doc.fontSize(16)
            .font('Helvetica-Bold')
-           .fillColor('#27ae60')
-           .text(item.score.toString(), x, scoresY + 50, {
-             width: scoreWidth,
+           .fillColor('#2c3e50')
+           .text(item.score.toString(), 590, y, {
+             width: 50,
              align: 'center'
            });
       });
     }
-
-    // Final score
-    if (data.final_score !== null && data.final_score !== undefined) {
-      doc.fontSize(14)
-         .font('Helvetica-Bold')
-         .fillColor('#2c3e50')
-         .text('Final Score:', 0, scoresY + 100, {
-           align: 'center',
-           width: 842
-         });
-      
-      doc.fontSize(24)
-         .font('Helvetica-Bold')
-         .fillColor('#e74c3c')
-         .text(data.final_score.toString(), 0, scoresY + 125, {
-           align: 'center',
-           width: 842
-         });
-    }
-
-    // Date
-    doc.fontSize(12)
-       .font('Helvetica')
-       .fillColor('#7f8c8d')
-       .text(`Date: ${dateTaken}`, 0, 520, {
-         align: 'center',
-         width: 842
-       });
 
     // Finalize PDF
     doc.end();
