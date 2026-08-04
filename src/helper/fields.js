@@ -19,6 +19,7 @@ exports.class = `
 	class_code,
 	description,
 	levelid,
+	programid,
 	lecturerid,
 	schedule_day,
 	schedule_time,
