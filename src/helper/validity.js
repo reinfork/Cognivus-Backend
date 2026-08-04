@@ -11,7 +11,6 @@ const addMonths = (date, months) => {
   const result = new Date(date);
   const day = result.getUTCDate();
 
-  // Move off the current day first so a 31st never overflows into next month
   result.setUTCDate(1);
   result.setUTCMonth(result.getUTCMonth() + months);
 
