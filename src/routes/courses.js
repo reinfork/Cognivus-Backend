@@ -2,10 +2,14 @@ const express = require('express');
 const router = express.Router();
 const courseController = require('../controllers/courses');
 const { authenticateToken } = require('../middleware/auth');
+const { requireActiveValidity } = require('../middleware/validity');
 const multerConfig = require('../config/multer');
 
 // Apply authentication to all lecturer routes
 router.use(authenticateToken);
+
+// Students with a lapsed class period cannot reach course material
+router.use(requireActiveValidity);
 
 // Get all students 
 router.get('/', courseController.getAll);

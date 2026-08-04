@@ -59,7 +59,8 @@ exports.user = (body = {}) => {
     'password',
     'is_active',
     'raw_meta_data',
-    'google_id'
+    'google_id',
+    'deactivate_at'
   ];
 
   return allowedFields.reduce((payload, field) => {

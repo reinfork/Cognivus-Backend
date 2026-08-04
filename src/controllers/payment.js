@@ -2,6 +2,28 @@ const snap = require('../config/midtrans.js');
 const supabase = require('../config/supabase.js');
 const { getStatus } = require('../helper/payment_status');
 const { normalize } = require('../services/normalizePaymentStatus.js')
+const { extendForPayment } = require('../helper/validity.js')
+
+/**
+ * Grant class time once, only on the transition into 'success'.
+ *
+ * Never throws: Midtrans retries a 500, but by then tbpayment.status already
+ * reads 'success' so the guard below would skip the extension permanently.
+ * Logging instead keeps the payment recorded and leaves a trail for an admin
+ * to correct the date by hand.
+ */
+const grantValidity = async (req, row, newStatus) => {
+	if (!row || row.status === 'success' || newStatus !== 'success') return;
+
+	try {
+		await extendForPayment(row.studentid, row.payment_type);
+	} catch (error) {
+		req.log.error(
+			{ reqId: req.id, paymentid: row.paymentid, studentid: row.studentid, error },
+			'Failed to extend class validity after successful payment'
+		);
+	}
+};
 
 
 exports.generateTuition   = async (req, res) => {
@@ -227,6 +249,8 @@ exports.webhook = async (req, res) => {
 					raw: notification
 				});
 			if (logError) throw logError;
+
+			await grantValidity(req, data, paymentStatus);
 		}
 
 		res.status(200).json({
@@ -358,6 +382,8 @@ exports.refreshStudentID = async (req, res) => {
 					});
 				if (logError) throw logError;
 
+				await grantValidity(req, element, transactionStatus);
+
 			} catch (error) {
 				throw new Error(`error send request on orderID: ${element?.midtrans_orderid ?? index}`)
 				continue;
@@ -444,6 +470,8 @@ exports.refreshOrderID = async (req, res) => {
 				raw: status
 			});
 		if (logError) throw logError;
+
+		await grantValidity(req, payment, transactionStatus);
 
 		return res.status(200).json({
 			success: true,

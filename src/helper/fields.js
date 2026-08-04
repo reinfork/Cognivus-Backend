@@ -54,7 +54,8 @@ exports.student = `
 	tbuser!inner(
 	  userid,
 	  username,
-	  email
+	  email,
+	  deactivate_at
 	  )
 `;
 
