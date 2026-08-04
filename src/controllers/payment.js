@@ -9,11 +9,13 @@ exports.generateTuition   = async (req, res) => {
 		const { email, amount, name, studentid, payment_type, type } = req.body;
 
 		//idempotent check
-		const { data: paymentData, error} = await supabase
+		const { data: paymentData, error: paymentError} = await supabase
 			.from('tbpayment')
 			.select()
 			.match({ studentid, status: 'pending'})
 			.limit(1);
+
+		if (paymentError) throw paymentError
 
 		if (paymentData.length !== 0) {
 			return res.status(200).json({
@@ -32,7 +34,7 @@ exports.generateTuition   = async (req, res) => {
 			.eq('studentid', studentid)
 			.single()
 
-		if (classError) throw classError;
+		if (classError || classData.tbclass === null ) throw classError;
 
 		let price;
 
@@ -127,7 +129,7 @@ exports.generateAncillary = async (req, res) => {
 			});
 		};
 
-		let price;
+		let id;
 
 		if (type === 1) {
 			id = 1
@@ -144,7 +146,7 @@ exports.generateAncillary = async (req, res) => {
 		const { data: ancilData, error: ancilError } = await supabase
 			.from('tbancillary_price')
 			.select()
-			.eq('id', id)
+			.eq('apid', id)
 			.single()
 
 		if (ancilError) throw ancilError;
@@ -373,6 +375,7 @@ exports.refreshStudentID = async (req, res) => {
 					message: `error send request on orderID: ${element?.midtrans_orderid ?? index}`,
 					error: error.message
 				})
+				continue;
 			}
 		};
 
