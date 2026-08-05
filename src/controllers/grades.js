@@ -3,7 +3,7 @@ const { grade: select } = require('../helper/fields');
 const { grade: payload } = require('../helper/payload');
 const reports = require('../models/reports');
 const {grade} = require('../helper/whatsapp');
-const { LEVEL_KEYS, LEVEL_LABELS, resolveTemplate, renderCertificate } = require('../helper/certificate');
+const { resolveTemplate, renderCertificate } = require('../helper/certificate');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const bucket = "reports";
@@ -169,15 +169,6 @@ exports.delete = async (req, res) => {
       error: error.message
     });
   }
-};
-
-// List the certificate levels the generator has a template for, so the
-// frontend dropdown stays in sync with the assets that actually exist.
-exports.certificateLevels = async (req, res) => {
-  return res.json({
-    success: true,
-    data: LEVEL_KEYS.map((value) => ({ value, label: LEVEL_LABELS[value] }))
-  });
 };
 
 /**

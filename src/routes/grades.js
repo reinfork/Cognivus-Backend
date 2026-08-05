@@ -13,9 +13,6 @@ router.get('/', gradeController.getAll);
 // Create a new class
 router.post('/', multerConfig.single('file'), gradeController.create);
 
-// Certificate levels that have a template (must be before /:id route)
-router.get('/certificate-levels', gradeController.certificateLevels);
-
 // Download certificate for a specific grade (must be before /:id route)
 router.get('/:id/certificate', gradeController.downloadCertificate);
 
