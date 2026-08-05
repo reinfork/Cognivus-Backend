@@ -148,6 +148,7 @@ exports.grade = `
 		fullname,
 		studentid,
 		birthdate,
+		birthplace,
 		classid
 		)
 `;

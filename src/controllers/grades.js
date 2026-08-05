@@ -3,8 +3,8 @@ const { grade: select } = require('../helper/fields');
 const { grade: payload } = require('../helper/payload');
 const reports = require('../models/reports');
 const {grade} = require('../helper/whatsapp');
+const { resolveTemplate, renderCertificate } = require('../helper/certificate');
 const PDFDocument = require('pdfkit');
-const path = require('path');
 const fs = require('fs');
 const bucket = "reports";
 
@@ -171,129 +171,84 @@ exports.delete = async (req, res) => {
   }
 };
 
+/**
+ * Falls back to the level of the class the student is enrolled in when the
+ * grade itself has no level recorded, so a student can just hit Download.
+ */
+const levelFromClass = async (classid) => {
+  if (!classid) return null;
+
+  const { data, error } = await supabase
+    .from('tbclass')
+    .select('tblevel(name)')
+    .eq('classid', classid)
+    .single();
+
+  if (error || !data) return null;
+  return data.tblevel?.name || null;
+};
+
 // Download certificate for a specific grade
 exports.downloadCertificate = async (req, res) => {
   try {
-    const { id } = req.params; 
+    const { id } = req.params;
 
     // Fetch grade data with student information
     const { data, error } = await supabase
       .from('tbgrade')
       .select(select)
       .eq('gradeid', id)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) throw error;
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        message: `Grade id: ${id} not found`
+      });
+    }
+
+    const student = data.tbstudent || {};
+    const level = data.level || await levelFromClass(student.classid);
+    const template = resolveTemplate(level);
+
+    if (!template) {
+      // tblevel stores "pre-elementary" with no tier, so the class fallback can
+      // never pick between the four Pre-Elementary templates on its own.
+      const needsTier = /^pre[\s-]*elementary$/i.test((level || '').trim());
+
+      return res.status(422).json({
+        success: false,
+        message: needsTier
+          ? 'Set the certificate level on this grade: the class only says "pre-elementary", which does not say which of Pre-Elementary I-IV to issue'
+          : level
+            ? `No certificate template matches level "${level}"`
+            : 'This grade has no certificate level set, and the student\'s class has none either'
+      });
+    }
+
+    if (!fs.existsSync(template.file)) {
+      return res.status(500).json({
+        success: false,
+        message: `Certificate template asset is missing: ${template.file}`
+      });
+    }
 
     const doc = new PDFDocument({
-      layout: 'landscape',
-      size: 'A4',
-      margins: { top: 50, bottom: 50, left: 72, right: 72 }
+      // Explicit page size: Pre-Elementary templates are letter, the rest A4.
+      size: [template.page.width, template.page.height],
+      margin: 0
     });
 
-    const fileName = `Certificate_${data.test_type || 'Test'}.pdf`;
+    const fileName = `Certificate_${student.fullname || 'Student'}_${template.label}.pdf`
+      .replace(/\s+/g, '_');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
     doc.pipe(res);
 
-    const templatePath = path.join(__dirname, '../assets/advanced.jpg');
-    if (fs.existsSync(templatePath)) {
-      doc.image(templatePath, 0, 0, {
-        width: 842,
-        height: 595
-      });
-    } else {
-      doc.rect(0, 0, 842, 595).fill('#f8f9fa');
-      
-      // Border
-      doc.rect(30, 30, 782, 535)
-         .lineWidth(3)
-         .strokeColor('#2c3e50')
-         .stroke();
-      
-      doc.rect(40, 40, 762, 515)
-         .lineWidth(1)
-         .strokeColor('#34495e')
-         .stroke();
-    }
-
-    // Text overlay
-    const referencenumber = data.referencenumber;
-    const studentName = data.tbstudent.fullname;
-    const birthdate = data.tbstudent.birthdate
-      ? new Date(data.tbstudent.birthdate).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })
-      : 'N/A';
-    const testType = data.test_type || 'English Proficiency Test';
-    const dateTaken = data.date_taken 
-      ? new Date(data.date_taken).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        })
-      : 'N/A';
-
-    //reference number
-    doc.fontSize(13)
-       .font('Helvetica')
-       .fillColor('#00000')
-       .text(referencenumber, 90, 16, {
-         align: 'left',
-         width: 200
-       });
-
-
-    // Student name
-    doc.fontSize(32)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text(studentName, 73, 270, {
-         align: 'left',
-         width: 842
-       });
-
-    // Birthdate
-    doc.fontSize(13)
-       .font('Helvetica')
-       .fillColor('#00000')
-       .text(birthdate, 130, 316, {
-         align: 'left',
-         width: 842
-       });
-
-    // Scores section
-    const scoresY = 300;
-    const scoreLabels = [
-      { label: 'Listening', score: data.listening_score },
-      { label: 'Speaking', score: data.speaking_score },
-      { label: 'Reading', score: data.reading_score },
-      { label: 'Writing', score: data.writing_score },
-      { label: 'Grammar', score: data.grammar_score },
-      { label: 'Vocabulary', score: data.vocabulary_score },
-      { label: 'average', score: data.final_score}
-    ].filter(item => item.score !== null && item.score !== undefined);
-
-    if (scoreLabels.length > 0) {
-
-      const scoreSpace = 20;
-      const startY = 395;
-
-      scoreLabels.forEach((item, index) => {
-        const y = startY + (index * scoreSpace);
-        
-        doc.fontSize(16)
-           .font('Helvetica-Bold')
-           .fillColor('#2c3e50')
-           .text(item.score.toString(), 590, y, {
-             width: 50,
-             align: 'center'
-           });
-      });
-    }
+    renderCertificate(doc, template, data);
 
     // Finalize PDF
     doc.end();
@@ -306,4 +261,4 @@ exports.downloadCertificate = async (req, res) => {
       error: error.message
     });
   }
-}; 
+};
