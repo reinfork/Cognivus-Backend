@@ -177,7 +177,6 @@ exports.grade = (body = {}) => {
     'test_type',
     'listening_score',
     'speaking_score',
-    'listening_score',
     'reading_score',
     'writing_score',
     'grammar_score',
@@ -185,7 +184,8 @@ exports.grade = (body = {}) => {
     'final_score',
     'description',
     'date_taken',
-    'description',
+    'level',
+    'referencenumber',
   ];
 
   return allowedFields.reduce((payload, field) => {

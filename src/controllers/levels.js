@@ -7,8 +7,9 @@ exports.getAll = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('tblevel')
-      .select(select);
-    
+      .select(select)
+      .order('levelid');
+
     if (error) throw error;
     
     res.json({
