@@ -19,7 +19,8 @@ exports.student = (body = {}) => {
     'learning_mode',
     'preferred_time',
     'studied_before',
-    'learning_reason'
+    'learning_reason',
+    'paymentplan'
   ];
 
   return allowedFields.reduce((payload, field) => {

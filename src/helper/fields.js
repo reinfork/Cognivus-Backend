@@ -52,6 +52,7 @@ exports.student = `
 	preferred_time,
 	studied_before,
 	learning_reason,
+	paymentplan,
 	tbuser!inner(
 	  userid,
 	  username,
