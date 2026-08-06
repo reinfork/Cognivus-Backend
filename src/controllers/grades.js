@@ -4,6 +4,7 @@ const { grade: payload } = require('../helper/payload');
 const reports = require('../models/reports');
 const {grade} = require('../helper/whatsapp');
 const { resolveTemplate, renderCertificate } = require('../helper/certificate');
+const { levelFromClass } = require('../services/gradeclass');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const bucket = "reports";
@@ -171,24 +172,7 @@ exports.delete = async (req, res) => {
   }
 };
 
-/**
- * Falls back to the level of the class the student is enrolled in when the
- * grade itself has no level recorded, so a student can just hit Download.
- */
-const levelFromClass = async (classid) => {
-  if (!classid) return null;
 
-  const { data, error } = await supabase
-    .from('tbclass')
-    .select('tblevel(name)')
-    .eq('classid', classid)
-    .single();
-
-  if (error || !data) return null;
-  return data.tblevel?.name || null;
-};
-
-// Download certificate for a specific grade
 exports.downloadCertificate = async (req, res) => {
   try {
     const { id } = req.params;
@@ -214,8 +198,6 @@ exports.downloadCertificate = async (req, res) => {
     const template = resolveTemplate(level);
 
     if (!template) {
-      // tblevel stores "pre-elementary" with no tier, so the class fallback can
-      // never pick between the four Pre-Elementary templates on its own.
       const needsTier = /^pre[\s-]*elementary$/i.test((level || '').trim());
 
       return res.status(422).json({

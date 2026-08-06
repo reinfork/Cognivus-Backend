@@ -5,12 +5,8 @@ const ASSETS = path.join(__dirname, '../assets/certificates');
 const A4_LANDSCAPE = { width: 842, height: 595 };
 const LETTER_LANDSCAPE = { width: 792, height: 612 };
 
-// The navy the sample certificate uses for the student name.
 const NAVY = '#16408b';
 
-// Row order printed on every template. Must stay in sync with the labels baked
-// into the background images: Listening, Speaking, Grammar/Structure, Reading,
-// Writing, Vocabulary, Average.
 const SCORE_ORDER = [
   'listening_score',
   'speaking_score',
@@ -21,17 +17,6 @@ const SCORE_ORDER = [
   'final_score',
 ];
 
-/**
- * Coordinates are in PDF points with the origin at the top-left corner, which is
- * what pdfkit's doc.text(str, x, y) expects. They were derived from the label
- * positions baked into each template (pdftotext -bbox-layout) plus the filled
- * sample "Advanced Certificate.pdf", so `advanced` is exact and the rest follow
- * the same offsets relative to their own labels.
- *
- * scores.x + scores.width is the right edge the numbers align to.
- */
-
-// Pre-Elementary I/III/IV share one geometry; II sits ~25pt lower.
 const preElementary = (file, name) => ({
   file: path.join(ASSETS, file),
   page: LETTER_LANDSCAPE,
@@ -125,13 +110,6 @@ const LEVEL_KEYS = Object.keys(LEVEL_LABELS);
 
 const ROMAN = { i: 1, ii: 2, iii: 3, iv: 4 };
 
-/**
- * Maps a free-form level name onto a template key. Level names come from either
- * tbgrade.level or tblevel.name, both of which are plain text, so accept the
- * spellings people actually type: "Pre Elementary II", "pre-elementary 2",
- * "PE III", "Intermediate".
- * Returns null when nothing matches -- never guess a template.
- */
 const resolveTemplateKey = (level) => {
   if (!level || typeof level !== 'string') return null;
 
@@ -185,10 +163,6 @@ const fitText = (doc, text, field) => {
      });
 };
 
-/**
- * Stamps the template artwork onto the page and overlays the grade values.
- * `grade` is a tbgrade row joined with tbstudent (helper/fields.js -> grade).
- */
 const renderCertificate = (doc, template, grade) => {
   const student = grade.tbstudent || {};
   const { fields, scores } = template;

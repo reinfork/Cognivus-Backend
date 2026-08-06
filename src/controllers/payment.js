@@ -2,29 +2,7 @@ const snap = require('../config/midtrans.js');
 const supabase = require('../config/supabase.js');
 const { getStatus } = require('../helper/payment_status');
 const { normalize } = require('../services/normalizePaymentStatus.js')
-const { extendForPayment } = require('../helper/validity.js')
-
-/**
- * Grant class time once, only on the transition into 'success'.
- *
- * Never throws: Midtrans retries a 500, but by then tbpayment.status already
- * reads 'success' so the guard below would skip the extension permanently.
- * Logging instead keeps the payment recorded and leaves a trail for an admin
- * to correct the date by hand.
- */
-const grantValidity = async (req, row, newStatus) => {
-	if (!row || row.status === 'success' || newStatus !== 'success') return;
-
-	try {
-		await extendForPayment(row.studentid, row.payment_type);
-	} catch (error) {
-		req.log.error(
-			{ reqId: req.id, paymentid: row.paymentid, studentid: row.studentid, error },
-			'Failed to extend class validity after successful payment'
-		);
-	}
-};
-
+const { grantValidity } = require('../services/grantValidity.js')
 
 exports.generateTuition   = async (req, res) => {
 	try{
