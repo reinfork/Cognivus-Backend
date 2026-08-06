@@ -152,6 +152,7 @@ exports.course = (body = {}) => {
 exports.class = (body = {}) => {
   const allowedFields = [
     'levelid',
+    'programid',
     'class_code',
     'description',
     'lecturerid',
