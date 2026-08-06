@@ -303,8 +303,9 @@ exports.requestOtp = async (req, res) => {
 exports.verifyOtp = async (req, res) => {
   try {
     const { address, phone, channel, otp } = req.body;
+    const otpValue = Array.isArray(otp) ? otp.join('') : String(otp ?? '');
 
-    if (!otp) return res.status(400).json({ 
+    if (!otpValue) return res.status(400).json({ 
       success: false, 
       message: 'OTP required' 
     });
@@ -395,7 +396,7 @@ exports.verifyOtp = async (req, res) => {
     };
 
     //verify otp
-    const isValid = await otputils.verify(otp, otpRow.otp_hash);
+    const isValid = await otputils.verify(otpValue, otpRow.otp_hash);
 
     if (!isValid) {
       const { data: invalidData, error: invalidError } = await supabase

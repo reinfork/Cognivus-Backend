@@ -12,5 +12,6 @@ exports.hash = async (otp) => {
 }
 
 exports.verify = (otp, otpHash) => {
-  return bcrypt.compare(otp, otpHash);
+  const otpStr = Array.isArray(otp) ? otp.join('') : String(otp ?? '');
+  return bcrypt.compare(otpStr, otpHash);
 }
