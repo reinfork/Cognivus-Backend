@@ -72,7 +72,7 @@ exports.create = async (req, res) => {
       .single();
 
     if (userError) {
-      return res.status(409).json({ success: false, message: 'Error creating user account.', error: userError.message });
+      return res.status(409).json({ success: false, message: 'Error creating teacher account.', error: userError.message });
     }
 
     const insert = { ...payload(req.body), userid: newUser.userid };
@@ -84,7 +84,14 @@ exports.create = async (req, res) => {
       .single();
 
     if (lecturerError) {
-      return res.status(500).json({ success: false, message: 'User account created, but failed to create lecturer profile.', error: lecturerError.message });
+      const { data: deleteTeacher, error: deleteTeacherErr } = await supabase
+        .from("tbuser")
+        .delete()
+        .eq("userid", newUser.userid)
+
+      if (deleteTeacherErr) throw deleteTeacherErr;
+
+      return res.status(500).json({ success: false, message: 'User account created, but failed to create lecturer profile. Deleting user account', error: lecturerError.message });
     }
 
     res.status(201).json({
@@ -161,6 +168,8 @@ exports.delete = async (req, res) => {
       .from('tbuser')
       .delete()
       .eq('userid', id);
+
+    if (userError) throw userError;
 
     res.json({
       success: true,
