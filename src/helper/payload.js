@@ -1,3 +1,4 @@
+const Joi = require("joi")
 
 exports.student = (body = {}) => {
   const allowedFields = [
@@ -244,3 +245,13 @@ exports.ancillary = (body = {}) => {
     return payload;
   }, {});
 };
+
+exports.payment_request = Joi.object({
+  studentid: Joi.number().integer().required(),
+  current_plan: Joi.string().max(100).trim(),
+  request_plan: Joi.string().max(100).trim(),
+  reason: Joi.string().max(2000).allow(''),
+  note: Joi.string().max(1000).allow(''),
+  reviewed_at: Joi.date(),
+  status: Joi.string().max(50)
+});

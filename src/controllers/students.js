@@ -86,15 +86,7 @@ exports.create = async (req, res) => {
       .single();
 
     if (studentError) {
-
-      const {data: userData, error: userError } = await supabase
-        .from('tbuser')
-        .delete()
-        .eq('userid', newUser.userid)
-
-      if (userError) = throw userError;
-
-      return res.status(500).json({ success: false, message: 'User account created, but failed to create student profile. Deleting user account', error: studentError.message });
+      return res.status(500).json({ success: false, message: 'User account created, but failed to create student profile.', error: studentError.message });
     }
 
     res.status(201).json({

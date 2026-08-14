@@ -160,3 +160,14 @@ exports.ancillary = `
 	description,
 	price
 `;
+
+exports.payment_request = `
+	requestid,
+	studentid,
+	current_plan,
+	request_plan,
+	reason,
+	note,
+	reviewed_at,
+	status
+`
