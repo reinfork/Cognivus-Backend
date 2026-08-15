@@ -72,6 +72,7 @@ const paymentRoutes = require('./routes/payment');
 const emailRoutes = require('./routes/email');
 const ancillaryPriceRoutes = require('./routes/ancillary_price');
 const popupRoutes = require('./routes/popup');
+const paymentRequestRoutes = require('./routes/payment_plan_change_request')
 
 // Use routes
 app.use('/auth', authRoutes, authLimiter);
@@ -92,6 +93,7 @@ app.use('/payment', paymentRoutes, adminLimiter);
 app.use('/email', emailRoutes, adminLimiter);
 app.use('/ancillary_price', ancillaryPriceRoutes, adminLimiter);
 app.use('/popup', generalLimiter, popupRoutes);
+app.use('/request', generalLimiter, paymentRequestRoutes);
 
 // Test Supabase connection
 app.get('/test-supabase', async (req, res) => {

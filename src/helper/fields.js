@@ -52,6 +52,7 @@ exports.student = `
 	preferred_time,
 	studied_before,
 	learning_reason,
+	paymentplan,
 	tbuser!inner(
 	  userid,
 	  username,
@@ -159,3 +160,14 @@ exports.ancillary = `
 	description,
 	price
 `;
+
+exports.payment_request = `
+	requestid,
+	studentid,
+	current_plan,
+	request_plan,
+	reason,
+	note,
+	reviewed_at,
+	status
+`
