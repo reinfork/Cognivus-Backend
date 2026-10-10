@@ -163,7 +163,7 @@ exports.class = Joi.object({
   schedule_day_2: Joi.string(),
   branch: Joi.string().max(100),
   is_default: Joi.boolean()
-})
+});
 
 exports.grade = Joi.object({
   studentid: Joi.number().integer(),
@@ -216,6 +216,7 @@ exports.ancillary = Joi.object({
   name: Joi.string(),
   description: Joi.string().max(1000),
   price: Joi.number()
+
 })
 
 exports.payment_request = Joi.object({

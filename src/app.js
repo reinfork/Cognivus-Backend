@@ -18,14 +18,27 @@ app.use(requestID);
 app.use(
   pinoHttp({
     logger,
+    customLogLevel: function (req, res, err) {
+      if (res.statusCode >= 500) return 'error';
+      else if (res.statusCode >= 400 && res.statusCode <= 500) return 'warn';
+      else return 'silent';
+      return 'info';
+    },
     customGenReqId: function (req) {
-      return req.id;          // use our middleware ID
+      return req.id;
     },
     customSuccessMessage: function (req, res) {
-      return `${req.method} ${req.url} completed`;
+      return `${req.method} ${req.baseUrl}${req.url} completed`;
     },
     customErrorMessage: function (req, res, error) {
-      return `${req.method} ${req.url} errored`;
+      return `${req.method} ${req.baseUrl}${req.url} errored`;
+    },
+    customProps: function (req, res) {
+      if (!res.headersSent && !res.writableEnded) { //prevent customProp called twice by pino
+              return {}; 
+      }
+      const routePath = req.route ? (req.baseUrl || '') + req.route.path : req.url;
+      return {endpoint: routePath}
     },
     serializers: {
       req: (req) => ({
@@ -35,7 +48,16 @@ app.use(
       }),
       res: (res) => ({
         statusCode: res.statusCode
-      })
+      }),
+      err: (err) => {
+        const sanitizedErr = {
+          type: err.type,
+          message: err.message
+        };
+        if (process.env.NODE_ENV !== 'production') {
+          sanitizedErr.stack = err.stack;
+        }
+      }
     }
   })
 );

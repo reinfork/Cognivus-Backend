@@ -30,20 +30,23 @@ exports.getById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let lecturerQuery = supabase
+    const { data, error } = await supabase
       .from('tbcourse')
       .select(select)
       .eq('courseid', id)
       .single();
 
-    let { data, error } = await lecturerQuery;
-
-    if (error) throw error;
+    if (!data) throw new Error("no data found");
+    else if (error) {
+      req.log.error({err: error}, 'Error fetching course')
+      throw error
+    };
 
     return res.json({
       success: true,
       data
     });
+
   } catch (error) {
     return res.status(500).json({
       success: false,

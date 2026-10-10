@@ -27,12 +27,11 @@ exports.generateTuition   = async (req, res) => {
 			});
 		};
 
-		//Valid Tuition Amount
 		const { data: classData, error: classError } = await supabase
 			.from('tbstudent')
 			.select(`tbclass(programid, levelid)`)
 			.eq('studentid', studentid)
-			.single()
+			.maybeSingle()
 
 		if (classError || classData.tbclass === null ) throw classError;
 
@@ -136,7 +135,7 @@ exports.generateAncillary = async (req, res) => {
 			.from('tbancillary_price')
 			.select()
 			.eq('apid', apid)
-			.single()
+			.maybeSingle()
 
 		if (ancilError) throw ancilError;
 
@@ -148,7 +147,7 @@ exports.generateAncillary = async (req, res) => {
 		const parameter = {
 			transaction_details: {
 				order_id: orderid,
-				gross_amount: ancilData.price
+				gross_amount: 1000
 			},
 			customer_details: {
 				first_name: name,
@@ -183,7 +182,7 @@ exports.generateAncillary = async (req, res) => {
 		return res.status(500).json({
 			success: false,
 			message: 'Error generate new midtrans token',
-			error
+			error: error.message
 		})
 	}
 };
@@ -239,7 +238,7 @@ exports.webhook = async (req, res) => {
 		res.status(500).json({
 			success: false,
 			message: 'Midtrans webhook error',
-			error
+			error: error.message
 		})
 	}
 };
@@ -266,7 +265,7 @@ exports.historyByID = async (req, res) => {
 		return res.status(500).json({
 			success: false,
 			message: 'Error fetching payment history',
-			error
+			error: error.message
 		});
 	}
 };
@@ -292,7 +291,7 @@ exports.history = async (req, res) => {
 		return res.status(500).json({
 			success: false,
 			message: 'Error fetching payment history',
-			error
+			error: error.message
 		});
 	}
 };
