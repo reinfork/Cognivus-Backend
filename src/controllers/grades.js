@@ -1,6 +1,5 @@
 const supabase = require('../config/supabase');
 const { grade: select } = require('../helper/fields');
-const { grade: payload } = require('../helper/payload');
 const reports = require('../models/reports');
 const {grade} = require('../helper/whatsapp');
 const { resolveTemplate, renderCertificate } = require('../helper/certificate');
@@ -57,20 +56,11 @@ exports.getById = async (req, res) => {
 //insert new student grade
 exports.create = async (req, res) => {
   try {
-    const insert = payload(req.body);
     const file = req.file;
 
-    if (!insert.test_type) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Test type are required for a new grade' 
-      });
-    }
-
-    //insert new grade into table
     const { data, error } = await supabase
       .from('tbgrade')
-      .insert(insert)
+      .insert(req.body)
       .select();
 
     if(error) throw error;
@@ -97,17 +87,16 @@ exports.create = async (req, res) => {
 };
 
 
-// Update data lecturer
+// Update data
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const insert = payload(req.body);
     const file = req.file;
 
     // update grade
     const { data, error } = await supabase
       .from('tbgrade')
-      .update(insert)
+      .update(req.body)
       .eq('gradeid', id)
       .select();
 

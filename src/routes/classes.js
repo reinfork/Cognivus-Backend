@@ -2,23 +2,17 @@ const express = require('express');
 const router = express.Router();
 const classController = require('../controllers/classes');
 const {authenticateToken} = require('../middleware/auth');
+const {validate}= require('../middleware/sanitizer');
+const {class: schema} = require('../helper/payload');
 
-// Apply authentication to all classes routes
+
 router.use(authenticateToken);
 
-// Get all class
+
 router.get('/', classController.getAll);
-
-// Create a new class
-router.post('/', classController.create);
-
-// // Get a single class by ID
+router.post('/', validate(schema), classController.create);
 router.get('/:id', classController.getById);
-
-// Update a class
-router.put('/:id', classController.update);
-
-// Delete a class
+router.put('/:id', validate(schema), classController.update);
 router.delete('/:id', classController.delete);
 
 module.exports = router;

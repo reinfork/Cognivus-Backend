@@ -4,7 +4,7 @@ require('dotenv').config();
 const status = (process.env.MIDTRANS_ENV === 'production') ? true : false;
 
 const snap = new midtransClient.Snap({
-	isProduction: false,
+	isProduction: status,
 	serverKey: process.env.MIDTRANS_SERVER_KEY
 });
 

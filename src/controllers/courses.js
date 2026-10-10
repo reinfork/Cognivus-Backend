@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const { course: select } = require('../helper/fields.js');
 const { course: payload } = require('../helper/payload.js');
-const courses = require('../models/course.js');
+const material = require('../services/material.js');
 const bucket = 'courses';
 
 exports.getAll = async (req, res) => {
@@ -30,20 +30,23 @@ exports.getById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let lecturerQuery = supabase
+    const { data, error } = await supabase
       .from('tbcourse')
       .select(select)
       .eq('courseid', id)
       .single();
 
-    let { data, error } = await lecturerQuery;
-
-    if (error) throw error;
+    if (!data) throw new Error("no data found");
+    else if (error) {
+      req.log.error({err: error}, 'Error fetching course')
+      throw error
+    };
 
     return res.json({
       success: true,
       data
     });
+
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -78,7 +81,7 @@ exports.create = async (req, res) => {
 
     if(files){
       for(const file of files){
-        let courseFile = await courses.create(data[0], file, bucket);
+        let courseFile = await material.create(data[0], file, bucket);
         results.push(courseFile);
       }
     }
@@ -125,7 +128,7 @@ exports.update = async (req, res) => {
 
     if(files){
       for(const file of files){ 
-        let courseFile = await courses.create(data[0], file, bucket);
+        let courseFile = await material.create(data[0], file, bucket);
         results.push(courseFile);
       }
     }
@@ -154,7 +157,8 @@ exports.delete = async (req, res) => {
       .from('tbcourse')
       .delete()
       .eq('courseid', id)
-      .select(select);
+      .select(select)
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -165,11 +169,11 @@ exports.delete = async (req, res) => {
       });
     }
 
-    const files = data[0].tbcourse_files;
+    const files = data?.tbcourse_files;
 
     //remove files from bucket
     if(files){
-      for(const file of files) await courses.delete(file, bucket);
+      for(const file of files) await material.delete(file, bucket);
     }
 
     return res.json({
