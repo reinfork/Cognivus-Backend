@@ -151,53 +151,34 @@ exports.course = (body = {}) => {
   }, {});
 };
 
-exports.class = (body = {}) => {
-  const allowedFields = [
-    'levelid',
-    'programid',
-    'class_code',
-    'description',
-    'lecturerid',
-    'schedule_time',
-    'schedule_day',
-    'schedule_time_2',
-    'schedule_day_2',
-    'branch',
-    'is_default'
-  ];
+exports.class = Joi.object({
+  levelid: Joi.number().integer(),
+  programid: Joi.number().integer(),
+  class_code: Joi.string().max(200),
+  description: Joi.string().max(2000),
+  lecturerid: Joi.number().integer(),
+  schedule_time: Joi.string(),
+  schedule_day: Joi.string(),
+  schedule_time_2: Joi.string(),
+  schedule_day_2: Joi.string(),
+  branch: Joi.string().max(100),
+  is_default: Joi.boolean()
+})
 
-  return allowedFields.reduce((payload, field) => {
-    if (body[field] !== undefined) {
-      payload[field] = body[field] === '' ? null : body[field];
-    }
-    return payload;
-  }, {});
-};
-
-exports.grade = (body = {}) => {
-  const allowedFields = [
-    'studentid',
-    'test_type',
-    'listening_score',
-    'speaking_score',
-    'reading_score',
-    'writing_score',
-    'grammar_score',
-    'vocabulary_score',
-    'final_score',
-    'description',
-    'date_taken',
-    'level',
-    'referencenumber',
-  ];
-
-  return allowedFields.reduce((payload, field) => {
-    if (body[field] !== undefined) {
-      payload[field] = body[field] === '' ? null : body[field];
-    }
-    return payload;
-  }, {});
-};
+exports.grade = Joi.object({
+  studentid: Joi.number().integer(),
+  test_type: Joi.string().max(100),
+  listening_score: Joi.number().integer().max(100),
+  reading_score: Joi.number().integer().max(100),
+  writing_score: Joi.number().integer().max(100),
+  grammar_score: Joi.number().integer().max(100),
+  vocabulary_score: Joi.number().integer().max(100),
+  final_score: Joi.number().integer().max(100),
+  description: Joi.string(),
+  date_taken: Joi.date(),
+  level: Joi.string(),
+  referencenumber: Joi.string()
+});
 
 exports.report = (body = {}) => {
   const allowedFields = [
@@ -231,23 +212,14 @@ exports.course_files = (body = {}) => {
   }, {});
 };
 
-exports.ancillary = (body = {}) => {
-  const allowedFields = [
-    'name',
-    'description',
-    'price'
-  ];
-
-  return allowedFields.reduce((payload, field) => {
-    if (body[field] !== undefined) {
-      payload[field] = body[field] === '' ? null : body[field];
-    }
-    return payload;
-  }, {});
-};
+exports.ancillary = Joi.object({
+  name: Joi.string(),
+  description: Joi.string().max(1000),
+  price: Joi.number()
+})
 
 exports.payment_request = Joi.object({
-  studentid: Joi.number().integer().required(),
+  studentid: Joi.number().integer(),
   current_plan: Joi.string().max(100).trim(),
   request_plan: Joi.string().max(100).trim(),
   reason: Joi.string().max(2000).allow(''),

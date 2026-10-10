@@ -1,7 +1,7 @@
 const supabase = require('../config/supabase');
 const { course: select } = require('../helper/fields.js');
 const { course: payload } = require('../helper/payload.js');
-const courses = require('../models/course.js');
+const material = require('../services/material.js');
 const bucket = 'courses';
 
 exports.getAll = async (req, res) => {
@@ -78,7 +78,7 @@ exports.create = async (req, res) => {
 
     if(files){
       for(const file of files){
-        let courseFile = await courses.create(data[0], file, bucket);
+        let courseFile = await material.create(data[0], file, bucket);
         results.push(courseFile);
       }
     }
@@ -125,7 +125,7 @@ exports.update = async (req, res) => {
 
     if(files){
       for(const file of files){ 
-        let courseFile = await courses.create(data[0], file, bucket);
+        let courseFile = await material.create(data[0], file, bucket);
         results.push(courseFile);
       }
     }
@@ -154,7 +154,8 @@ exports.delete = async (req, res) => {
       .from('tbcourse')
       .delete()
       .eq('courseid', id)
-      .select(select);
+      .select(select)
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -165,11 +166,11 @@ exports.delete = async (req, res) => {
       });
     }
 
-    const files = data[0].tbcourse_files;
+    const files = data?.tbcourse_files;
 
     //remove files from bucket
     if(files){
-      for(const file of files) await courses.delete(file, bucket);
+      for(const file of files) await material.delete(file, bucket);
     }
 
     return res.json({

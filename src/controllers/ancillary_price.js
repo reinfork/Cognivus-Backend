@@ -1,5 +1,4 @@
 const supabase = require('../config/supabase');
-const { ancillary: payload } = require('../helper/payload');
 const { ancillary: select } = require('../helper/fields');
 
 //read all ancillary_price data
@@ -53,11 +52,10 @@ exports.getById = async (req, res) => {
 //insert new ancillary_price
 exports.create = async (req, res) => {
   try {
-    const insert = payload(req.body)
-    
+  
     const { data, error } = await supabase
       .from('tbancillary_price')
-      .insert(insert)
+      .insert(req.body)
       .select();
     
     if (error) throw error;
@@ -79,11 +77,10 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const insert = payload(req.body);
     
     const { data, error } = await supabase
       .from('tbancillary_price')
-      .update(insert)
+      .update(req.body)
       .eq('apid', id)
       .select();
     
@@ -121,8 +118,6 @@ exports.delete = async (req, res) => {
       .select();
     
     if (error) throw error;
-
-    console.log(data);
 
     if (!data || data.length === 0) {
       return res.status(404).json({

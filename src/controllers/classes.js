@@ -1,6 +1,5 @@
 const supabase = require('../config/supabase');
 const { class: select } = require('../helper/fields.js');
-const { class: payload } = require('../helper/payload.js');
 
 // retrieve all data from class
 exports.getAll = async (req, res) => {
@@ -63,16 +62,11 @@ exports.getById = async (req, res) => {
 //create new class
 exports.create = async (req, res) => {
   try {
-    const insert = payload(req.body);
-
-    if (!insert.class_code || !insert.levelid) {
-      return res.status(400).json({ success: false, message: 'Class Code and Level are required for a new class' });
-    }
 
     // Insert into table
     const { data, error } = await supabase
       .from('tbclass')
-      .insert(insert)
+      .insert(req.body)
       .select();
 
     if (error) {
@@ -98,9 +92,8 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const insert = payload(req.body);
+    const insert = req.body;
 
-    // only one class may be the default target for new Google sign-ups
     if (insert.is_default === true) {
       const { error: unsetError } = await supabase
         .from('tbclass')

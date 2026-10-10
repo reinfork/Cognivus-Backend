@@ -1,24 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const {validate} = require('../middleware/sanitizer');
+const {ancillary: schema} = require('../helper/payload')
 const controller = require('../controllers/ancillary_price');
 const {authenticateToken} = require('../middleware/auth');
 
 // Apply authentication to all users routes
 router.use(authenticateToken);
 
-// Get all students
 router.get('/', controller.getAll);
-
-// Get a single student by ID
 router.get('/:id', controller.getById);
-
-// Create a new student
-router.post('/', controller.create);
-
-// Update a student
-router.put('/:id', controller.update);
-
-// Delete a student
+router.post('/', validate(schema), controller.create);
+router.put('/:id', validate(schema), controller.update);
 router.delete('/:id', controller.delete);
 
 module.exports = router;
